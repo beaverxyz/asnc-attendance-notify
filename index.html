@@ -779,18 +779,25 @@ function flatItems(roster) {
 const pickerBtn=document.getElementById("pickerBtn");
 const pickerDd=document.getElementById("pickerDd");
 
-function renderPicker(filter) {
-  if (filter === undefined) filter = pickerDd.querySelector(".picker-search")?.value || "";
+function renderPicker() {
   pickerDd.innerHTML = "";
 
   const si = document.createElement("input");
-  si.type="text"; si.className="picker-search"; si.placeholder="Search officers…"; si.value=filter;
-  si.addEventListener("input", () => renderPicker(si.value));
+  si.type="text"; si.className="picker-search"; si.placeholder="Search officers…";
+  si.addEventListener("input", () => filterPickerItems(si.value));
   si.addEventListener("click", e => e.stopPropagation());
   si.addEventListener("keydown", e => { if(e.key==="Escape"){closePicker();e.stopPropagation();} });
   pickerDd.appendChild(si);
 
-  const q = filter.trim().toLowerCase();
+  filterPickerItems("");
+}
+
+function filterPickerItems(query) {
+  // Remove everything after the search input, then re-add filtered rows
+  const si = pickerDd.querySelector(".picker-search");
+  [...pickerDd.children].forEach(c => { if(c !== si) c.remove(); });
+
+  const q = (query || "").trim().toLowerCase();
   let pendingSection = null, count = 0;
 
   flatItems(S.roster).forEach(item => {
@@ -823,7 +830,7 @@ pickerBtn.addEventListener("click", () => pickerDd.classList.contains("open") ? 
 document.addEventListener("click", e => { if(!document.getElementById("pickerWrap").contains(e.target)) closePicker(); });
 function openPicker() {
   pickerDd.classList.add("open");
-  renderPicker("");
+  renderPicker();
   setTimeout(() => pickerDd.querySelector(".picker-search")?.focus(), 30);
 }
 function closePicker() { pickerDd.classList.remove("open"); }
