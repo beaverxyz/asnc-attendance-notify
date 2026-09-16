@@ -786,7 +786,10 @@ function renderPicker() {
   si.type="text"; si.className="picker-search"; si.placeholder="Search officers…";
   si.addEventListener("input", () => filterPickerItems(si.value));
   si.addEventListener("click", e => e.stopPropagation());
-  si.addEventListener("keydown", e => { if(e.key==="Escape"){closePicker();e.stopPropagation();} });
+  si.addEventListener("keydown", e => {
+    if(e.key==="Escape"){closePicker();e.stopPropagation();}
+    if(e.key==="Enter"){const first=pickerDd.querySelector(".picker-row");if(first)first.click();}
+  });
   pickerDd.appendChild(si);
 
   filterPickerItems("");
