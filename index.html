@@ -387,6 +387,23 @@ select:focus{outline:none;border-color:#2d6a4f}
     <!-- ── Distribute panel ── -->
     <div id="distributePanel" style="display:none">
 
+      <!-- Distribute settings panel (toggled by header ⚙ button) -->
+      <div class="settings-panel" id="distSettingsPanel">
+        <div style="font-size:12px;font-weight:700;color:#9ca3af;margin-bottom:4px">Distribution Settings</div>
+        <div class="settings-row">
+          <div class="settings-lbl">Discord Webhook URL</div>
+          <input class="settings-input" id="discordWebhook" placeholder="https://discord.com/api/webhooks/…" type="password">
+        </div>
+        <div class="settings-row" style="margin-top:4px">
+          <div class="dist-lbl-row" style="margin-bottom:4px">
+            <div class="settings-lbl">Recipients</div>
+            <button class="dist-reset-link" id="distResetRecip">Reset to default</button>
+          </div>
+          <textarea class="dist-recipients" id="distRecipients"></textarea>
+        </div>
+        <button class="btn-sec" id="saveDistSettingsBtn" style="margin-top:4px">Save</button>
+      </div>
+
       <!-- Email section -->
       <div class="dist-section-hdr">Email Distribution</div>
 
@@ -399,27 +416,13 @@ select:focus{outline:none;border-color:#2d6a4f}
       <div class="field-label">Meeting Date</div>
       <input class="settings-input" id="distDate" placeholder="e.g. 09/04/2026" style="width:100%;height:36px">
 
-      <div class="field-label">
-        <div class="dist-lbl-row">
-          <span>Recipients</span>
-          <button class="dist-reset-link" id="distResetRecip">Reset to default</button>
-        </div>
-      </div>
-      <textarea class="dist-recipients" id="distRecipients"></textarea>
-
       <button class="btn-primary" id="distEmailBtn" style="margin-top:12px">Open Email Draft</button>
       <div class="dist-attach-note">Attach the PDF before sending</div>
 
       <!-- Discord section -->
       <div class="dist-section-hdr">Post to Discord</div>
 
-      <div class="field-label">Webhook URL</div>
-      <div class="dist-webhook-row">
-        <input class="dist-webhook-input" id="discordWebhook" placeholder="https://discord.com/api/webhooks/…" type="password">
-        <button class="btn-sec" id="saveWebhookBtn" style="height:36px;width:56px;margin-top:0">Save</button>
-      </div>
-
-      <div class="field-label" style="margin-top:14px">PDF File</div>
+      <div class="field-label" style="margin-top:0">PDF File</div>
       <div class="pdf-drop" id="pdfDropZone">
         <div class="pdf-drop-label" id="pdfDropLabel">Drop PDF here or click to select</div>
         <div class="pdf-drop-sub" id="pdfDropSub">Each page posts as a PNG image</div>
@@ -1504,7 +1507,14 @@ document.getElementById("resetBtn").addEventListener("click",()=>{
 // ── Settings ──────────────────────────────────────────────────────────────────
 
 document.getElementById("settingsBtn").addEventListener("click",()=>{
-  document.getElementById("settingsPanel").classList.toggle("open");
+  const onDist = document.getElementById("distributePanel").style.display !== "none";
+  if (onDist) {
+    document.getElementById("settingsPanel").classList.remove("open");
+    document.getElementById("distSettingsPanel").classList.toggle("open");
+  } else {
+    document.getElementById("distSettingsPanel").classList.remove("open");
+    document.getElementById("settingsPanel").classList.toggle("open");
+  }
 });
 document.getElementById("saveSettingsBtn").addEventListener("click",()=>saveSettings());
 
@@ -1640,6 +1650,8 @@ function switchAppTab(tab) {
   document.getElementById("distributePanel").style.display = tab === "distribute" ? "" : "none";
   document.getElementById("tabAttendance").classList.toggle("active", tab === "attendance");
   document.getElementById("tabDistribute").classList.toggle("active", tab === "distribute");
+  document.getElementById("settingsPanel").classList.remove("open");
+  document.getElementById("distSettingsPanel").classList.remove("open");
   if (tab === "distribute") {
     initDistributePanel();
     if (!pdfjsLoaded) {
@@ -1669,26 +1681,28 @@ document.getElementById("distTypeMinutes").addEventListener("click", () => {
   document.getElementById("distTypeAgenda").classList.remove("active");
 });
 
-// Save recipients to localStorage on change
-document.getElementById("distRecipients").addEventListener("change", () => {
-  localStorage.setItem("distRecipients", document.getElementById("distRecipients").value);
-});
-
 // Distribute date → sync attendance tab date picker
 document.getElementById("distDate").addEventListener("change", () => syncDistDateToAttendance());
 
 // Reset recipients
 document.getElementById("distResetRecip").addEventListener("click", () => {
   document.getElementById("distRecipients").value = DIST_DEFAULT_RECIPIENTS;
-  localStorage.setItem("distRecipients", DIST_DEFAULT_RECIPIENTS);
   toast("Recipients reset to default.");
+});
+
+// Save distribution settings
+document.getElementById("saveDistSettingsBtn").addEventListener("click", () => {
+  localStorage.setItem("discordWebhook", document.getElementById("discordWebhook").value.trim());
+  localStorage.setItem("distRecipients", document.getElementById("distRecipients").value);
+  document.getElementById("distSettingsPanel").classList.remove("open");
+  toast("Distribution settings saved.");
 });
 
 // Email draft
 document.getElementById("distEmailBtn").addEventListener("click", () => {
   const date    = document.getElementById("distDate").value.trim();
   const recips  = document.getElementById("distRecipients").value.trim();
-  if (!recips) { toast("Add at least one recipient.", "err"); return; }
+  if (!recips) { toast("Add recipients in Settings first.", "err"); return; }
   const sd      = S.sender;
   const signoff = [sd.name||"", sd.title?(sd.title+","):"", sd.org||"", sd.email||"", sd.phone||""].filter(l=>l.trim().replace(",","")).join("\n");
   const docWord = distDocType === "Agenda" ? "agenda" : "minutes";
@@ -1699,14 +1713,6 @@ document.getElementById("distEmailBtn").addEventListener("click", () => {
   const mailto  = "mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   window.open(mailto);
   toast("✓ Email client opened — attach the PDF before sending.");
-});
-
-// Save webhook
-document.getElementById("saveWebhookBtn").addEventListener("click", () => {
-  const v = document.getElementById("discordWebhook").value.trim();
-  if (!v) { toast("Paste a webhook URL first.", "err"); return; }
-  localStorage.setItem("discordWebhook", v);
-  toast("Webhook saved.");
 });
 
 // PDF drop zone
