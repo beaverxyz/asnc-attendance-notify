@@ -430,6 +430,7 @@ select:focus{outline:none;border-color:#2d6a4f}
       </div>
 
       <button class="btn-primary" id="discordPostBtn" disabled style="margin-top:12px">Post to Discord</button>
+      <button class="btn-sec" id="distBothBtn" style="display:none;width:100%;height:44px;margin-top:8px;font-size:13px;font-weight:700">Email Draft + Post to Discord</button>
 
     </div><!-- /distributePanel -->
 
@@ -581,6 +582,8 @@ async function showApp() {
   await loadChangelogFromSheet();
   renderCL();
   loadData();
+  const savedTab = localStorage.getItem("activeAppTab");
+  if (savedTab === "distribute") switchAppTab("distribute");
 }
 
 // ── User info & cloud settings ────────────────────────────────────────────────
@@ -1652,6 +1655,7 @@ function switchAppTab(tab) {
   document.getElementById("tabDistribute").classList.toggle("active", tab === "distribute");
   document.getElementById("settingsPanel").classList.remove("open");
   document.getElementById("distSettingsPanel").classList.remove("open");
+  localStorage.setItem("activeAppTab", tab);
   if (tab === "distribute") {
     initDistributePanel();
     if (!pdfjsLoaded) {
@@ -1698,11 +1702,10 @@ document.getElementById("saveDistSettingsBtn").addEventListener("click", () => {
   toast("Distribution settings saved.");
 });
 
-// Email draft
-document.getElementById("distEmailBtn").addEventListener("click", () => {
+function openDistMailto() {
   const date    = document.getElementById("distDate").value.trim();
   const recips  = document.getElementById("distRecipients").value.trim();
-  if (!recips) { toast("Add recipients in Settings first.", "err"); return; }
+  if (!recips) { toast("Add recipients in Settings first.", "err"); return false; }
   const sd      = S.sender;
   const signoff = [sd.name||"", sd.title?(sd.title+","):"", sd.org||"", sd.email||"", sd.phone||""].filter(l=>l.trim().replace(",","")).join("\n");
   const docWord = distDocType === "Agenda" ? "agenda" : "minutes";
@@ -1712,7 +1715,12 @@ document.getElementById("distEmailBtn").addEventListener("click", () => {
   const to      = recips.split(/[;,]/).map(e=>e.trim()).filter(Boolean).join(";");
   const mailto  = "mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   window.open(mailto);
-  toast("✓ Email client opened — attach the PDF before sending.");
+  return true;
+}
+
+// Email draft
+document.getElementById("distEmailBtn").addEventListener("click", () => {
+  if (openDistMailto()) toast("✓ Email client opened — attach the PDF before sending.");
 });
 
 // PDF drop zone
@@ -1742,6 +1750,7 @@ async function handlePDF(file) {
   document.getElementById("pdfDropLabel").textContent = file.name;
   document.getElementById("pdfDropSub").textContent = "Rendering pages…";
   document.getElementById("discordPostBtn").disabled = true;
+  document.getElementById("distBothBtn").style.display = "none";
   pdfPages = [];
 
   try {
@@ -1756,6 +1765,7 @@ async function handlePDF(file) {
       pdfPages.push(await new Promise(r => canvas.toBlob(r, "image/png")));
     }
     document.getElementById("discordPostBtn").disabled = false;
+    document.getElementById("distBothBtn").style.display = "";
     document.getElementById("pdfDropSub").textContent = `${pdf.numPages} page${pdf.numPages>1?"s":""} ready to post`;
     toast(`✓ ${pdf.numPages} page${pdf.numPages>1?"s":""} loaded.`);
   } catch(e) {
@@ -1764,20 +1774,21 @@ async function handlePDF(file) {
   }
 }
 
-// Discord post
-document.getElementById("discordPostBtn").addEventListener("click", async () => {
+async function doDiscordPost(callerBtn) {
   const webhook = localStorage.getItem("discordWebhook") || "";
-  if (!webhook) { toast("Save a webhook URL first.", "err"); return; }
+  if (!webhook) { toast("Save a webhook URL in Settings first.", "err"); return; }
   if (!pdfPages.length) { toast("Load a PDF first.", "err"); return; }
 
-  const btn = document.getElementById("discordPostBtn");
-  btn.disabled = true;
-  btn.textContent = "Posting…";
+  const date    = document.getElementById("distDate").value.trim();
+  const docWord = distDocType === "Agenda" ? "agenda" : "minutes";
+  const verb    = distDocType === "Agenda" ? "is" : "are";
+  const msgText = `@everyone Attached ${verb} the ${docWord} for this Friday${date ? ", " + date : ""}. Contact administration if you have any questions or concerns regarding the content.`;
 
-  const date     = document.getElementById("distDate").value.trim();
-  const docWord  = distDocType === "Agenda" ? "agenda" : "minutes";
-  const verb     = distDocType === "Agenda" ? "is" : "are";
-  const msgText  = `@everyone Attached ${verb} the ${docWord} for this Friday${date ? ", " + date : ""}. Contact administration if you have any questions or concerns regarding the content.`;
+  const origLabel = callerBtn.textContent;
+  callerBtn.disabled = true;
+  callerBtn.textContent = "Posting…";
+  document.getElementById("discordPostBtn").disabled = true;
+  document.getElementById("distBothBtn").disabled = true;
 
   try {
     const CHUNK = 10;
@@ -1791,13 +1802,24 @@ document.getElementById("discordPostBtn").addEventListener("click", async () => 
       if (i + CHUNK < pdfPages.length) await new Promise(r => setTimeout(r, 500));
     }
     toast("✓ Posted to Discord.");
-    btn.textContent = "Post to Discord";
-    btn.disabled = false;
   } catch(e) {
     toast("Failed: " + e.message, "err");
-    btn.textContent = "Post to Discord";
-    btn.disabled = false;
+  } finally {
+    callerBtn.textContent = origLabel;
+    callerBtn.disabled = false;
+    document.getElementById("discordPostBtn").disabled = false;
+    document.getElementById("distBothBtn").disabled = false;
   }
+}
+
+// Discord post
+document.getElementById("discordPostBtn").addEventListener("click", function() { doDiscordPost(this); });
+
+// Both: email + discord
+document.getElementById("distBothBtn").addEventListener("click", async function() {
+  if (!openDistMailto()) return;
+  toast("✓ Email client opened — attach the PDF before sending.");
+  await doDiscordPost(this);
 });
 
 function setLoading(on) {
