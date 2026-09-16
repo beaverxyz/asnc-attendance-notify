@@ -234,7 +234,7 @@ select:focus{outline:none;border-color:#2d6a4f}
     <!-- Changelog -->
     <div class="cl-hdr">
       <span class="cl-title">Changelog</span>
-      <span class="cl-hint">session only · revert restores old value</span>
+      <span class="cl-hint">last 24 hrs · revert restores old value</span>
     </div>
     <div class="cl-list" id="clList"><div class="cl-empty">No writebacks yet this session.</div></div>
 
@@ -359,11 +359,13 @@ document.getElementById("signInBtn").addEventListener("click", () => {
 });
 
 function afterAuth() {
+  loadPersistedChangelog();
   if (!S.sheetId) {
     switchScreen("setupScreen");
   } else {
     switchScreen(null);
     document.getElementById("app").classList.add("active");
+    renderCL();
     loadData();
   }
 }
@@ -778,7 +780,7 @@ async function doRevert(entry) {
   } catch(e) {
     entry.status="done";setStatus("⚠ Revert failed: "+e.message,true);
   }
-  renderCL();setLoading(false);
+  renderCL();saveChangelog();setLoading(false);
 }
 
 // ── Changelog sheet write ─────────────────────────────────────────────────────
@@ -798,16 +800,33 @@ async function writeChangelog(name,pos,tab,date,oldVal,newVal,before,after,actio
   } catch(e){ console.warn("Changelog write failed:",e); }
 }
 
+// ── Changelog persistence ─────────────────────────────────────────────────────
+
+function loadPersistedChangelog() {
+  try {
+    const raw = localStorage.getItem("cl24");
+    if (!raw) return;
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    S.changelog = JSON.parse(raw).filter(e => e.tsMs && e.tsMs > cutoff);
+  } catch(e) { S.changelog = []; }
+}
+
+function saveChangelog() {
+  try { localStorage.setItem("cl24", JSON.stringify(S.changelog)); } catch(e) {}
+}
+
 // ── Changelog UI ──────────────────────────────────────────────────────────────
 
 function addCL(pw,status) {
-  S.changelog.unshift({...pw,status,timestamp:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})});
+  const loggedBy=(S.sender.name||"").split(" ")[0]||"?";
+  S.changelog.unshift({...pw,status,loggedBy,tsMs:Date.now(),timestamp:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})});
+  saveChangelog();
   renderCL();
 }
 
 function renderCL() {
   const el=document.getElementById("clList");
-  if(!S.changelog.length){el.innerHTML='<div class="cl-empty">No writebacks yet this session.</div>';return;}
+  if(!S.changelog.length){el.innerHTML='<div class="cl-empty">No changes in the last 24 hours.</div>';return;}
   el.innerHTML="";
   S.changelog.forEach(entry=>{
     const div=document.createElement("div");
@@ -815,7 +834,7 @@ function renderCL() {
     const old=entry.oldValue||"∅";
     const text=document.createElement("div");
     text.className="cl-text";
-    text.innerHTML="["+entry.timestamp+"]  <b>"+entry.officer.name+"</b>  ·  "+entry.dateDisplay+"  ·  "+old+" → "+entry.codeValue+"  ("+entry.totalBefore+" → "+entry.newTotal+" pts)";
+    text.innerHTML="["+entry.timestamp+"] <span style='color:#6b7280'>by <b style='color:#9ca3af'>"+entry.loggedBy+"</b></span>  ·  <b>"+entry.officer.name+"</b>  ·  "+entry.dateDisplay+"  ·  "+old+" → "+entry.codeValue+"  ("+entry.totalBefore+" → "+entry.newTotal+" pts)";
     div.appendChild(text);
     if(entry.status==="done"){
       const btn=document.createElement("button");btn.className="cl-revert";btn.textContent="↩ Revert";
