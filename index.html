@@ -654,7 +654,7 @@ function buildEmail() {
   const cumWord=Math.abs(newTotal)===1?"POINT":"POINTS";
   const firstName=o.name.split(" ")[0];
   const sd=S.sender;
-  const signoffLines=[sd.name,sd.title?sd.title+",":"",sd.org,sd.email,sd.phone].filter(l=>l.trim().replace(",",""));
+  const signoffLines=[sd.name||"",sd.title?(sd.title+","):"",sd.org||"",sd.email||"",sd.phone||""].filter(l=>l.trim().replace(",",""));
   const body="Hi "+firstName+",\n\nI hope you're doing well.\n\nI just wanted to let you know that you were "+code.body+" for "+eventDesc+". "+ptsAction+"\n\nYour cumulative total is "+newTotal+" "+cumWord+".\n\nPlease note, you have the right to appeal any absence to the Executive Committee.\n\nIf you have any questions, feel free to reach out.\n\nBest,\n"+signoffLines.join("\n");
   return {to:o.email,subject,body,newTotal,points:code.points};
 }
