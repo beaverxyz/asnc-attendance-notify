@@ -419,16 +419,14 @@ select:focus{outline:none;border-color:#2d6a4f}
         <button class="btn-sec" id="saveWebhookBtn" style="height:36px;width:56px;margin-top:0">Save</button>
       </div>
 
-      <div class="field-label" style="margin-top:14px">PDF File</div>
+      <div class="field-label" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+        <span>PDF File</span>
+        <span style="font-size:10px;color:#4b5563;font-weight:400;text-transform:none;letter-spacing:0">max 10 pages per post</span>
+      </div>
       <div class="pdf-drop" id="pdfDropZone">
         <div class="pdf-drop-label" id="pdfDropLabel">Drop PDF here or click to select</div>
-        <div class="pdf-drop-sub" id="pdfDropSub">Pages will be rendered as PNG images</div>
+        <div class="pdf-drop-sub" id="pdfDropSub">Each page posts as a PNG image</div>
         <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display:none">
-      </div>
-
-      <div id="pdfPreviewWrap" style="display:none;margin-top:10px">
-        <div class="field-label">Preview</div>
-        <div class="pdf-thumb-wrap" id="pdfPreviewPages"></div>
       </div>
 
       <button class="btn-primary" id="discordPostBtn" disabled style="margin-top:12px">Post to Discord</button>
@@ -1740,47 +1738,26 @@ async function handlePDF(file) {
   }
   document.getElementById("pdfDropLabel").textContent = file.name;
   document.getElementById("pdfDropSub").textContent = "Rendering pages…";
-  pdfPages = [];
-  const previewPages = document.getElementById("pdfPreviewPages");
-  previewPages.innerHTML = "";
-  document.getElementById("pdfPreviewWrap").style.display = "none";
   document.getElementById("discordPostBtn").disabled = true;
+  pdfPages = [];
 
   try {
     const buf = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     for (let i = 1; i <= pdf.numPages; i++) {
-      const page     = await pdf.getPage(i);
-      const vp       = page.getViewport({ scale: 2 });
-      const canvas   = document.createElement("canvas");
-      canvas.width   = vp.width;
-      canvas.height  = vp.height;
+      const page   = await pdf.getPage(i);
+      const vp     = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = vp.width; canvas.height = vp.height;
       await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
-      const blob     = await new Promise(r => canvas.toBlob(r, "image/png"));
-      pdfPages.push(blob);
-
-      const lbl = document.createElement("div");
-      lbl.className = "pdf-page-lbl";
-      lbl.textContent = `Page ${i} of ${pdf.numPages}`;
-      previewPages.appendChild(lbl);
-
-      const thumb       = document.createElement("canvas");
-      const thumbScale  = Math.min(1, (document.getElementById("pdfPreviewPages").clientWidth || 300) / vp.width);
-      thumb.width       = Math.round(vp.width  * thumbScale);
-      thumb.height      = Math.round(vp.height * thumbScale);
-      thumb.className   = "pdf-thumb";
-      const tc = thumb.getContext("2d");
-      tc.scale(thumbScale, thumbScale);
-      tc.drawImage(canvas, 0, 0);
-      previewPages.appendChild(thumb);
+      pdfPages.push(await new Promise(r => canvas.toBlob(r, "image/png")));
     }
-    document.getElementById("pdfPreviewWrap").style.display = "block";
     document.getElementById("discordPostBtn").disabled = false;
-    document.getElementById("pdfDropSub").textContent = `${pdf.numPages} page${pdf.numPages>1?"s":""} ready`;
+    document.getElementById("pdfDropSub").textContent = `${pdf.numPages} page${pdf.numPages>1?"s":""} ready to post`;
     toast(`✓ ${pdf.numPages} page${pdf.numPages>1?"s":""} loaded.`);
   } catch(e) {
     toast("Could not read PDF: " + e.message, "err");
-    document.getElementById("pdfDropSub").textContent = "Pages will be rendered as PNG images";
+    document.getElementById("pdfDropSub").textContent = "Each page posts as a PNG image";
   }
 }
 
@@ -1794,12 +1771,17 @@ document.getElementById("discordPostBtn").addEventListener("click", async () => 
   btn.disabled = true;
   btn.textContent = "Posting…";
 
+  const date     = document.getElementById("distDate").value.trim();
+  const docWord  = distDocType === "Agenda" ? "agenda" : "minutes";
+  const verb     = distDocType === "Agenda" ? "is" : "are";
+  const msgText  = `@everyone Attached ${verb} the ${docWord} for this Friday${date ? ", " + date : ""}. Contact administration if you have any questions or concerns regarding the content.`;
+
   try {
     const CHUNK = 10;
     for (let i = 0; i < pdfPages.length; i += CHUNK) {
       const chunk = pdfPages.slice(i, i + CHUNK);
       const fd = new FormData();
-      fd.append("payload_json", JSON.stringify({ content: "" }));
+      fd.append("payload_json", JSON.stringify({ content: i === 0 ? msgText : "" }));
       chunk.forEach((blob, j) => fd.append(`files[${j}]`, blob, `page-${i+j+1}.png`));
       const r = await fetch(webhook, { method: "POST", body: fd });
       if (!r.ok) { const t = await r.text(); throw new Error(`Discord ${r.status}: ${t}`); }
