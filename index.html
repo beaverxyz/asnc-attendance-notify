@@ -249,7 +249,7 @@ select:focus{outline:none;border-color:#2d6a4f}
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const CLIENT_ID = '34316801041-qhe90m04scl31ctn04jqad4vqihdkbc7.apps.googleusercontent.com';
-const SCOPE     = 'https://www.googleapis.com/auth/spreadsheets';
+const SCOPE     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile';
 const API       = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -267,7 +267,7 @@ const CODE_DISPLAY = [
   {label:"Excused Absence (+0.5 pts)",key:"3"},{label:"Fully Excused (0 pts)",key:"4"},
   {label:"Present (−0.5 pts)",key:"5"},{label:"Present Quarter (−0.25 pts)",key:"6"},
 ];
-const SKIP = ["main","info","changelog"];
+const SKIP = ["main","info","changelog","settings"];
 const KNOWN_TABS = {
   senate:        ["ASNC Senate Meeting","ASNC Senate Meeting","ASNC Legislative Senate Meeting"],
   exec:          ["ASNC Executive Committee Meeting","ASNC Executive Committee Meeting","ASNC Executive Committee Meeting"],
@@ -276,7 +276,8 @@ const KNOWN_TABS = {
   other:         ["Other","Other","Other"],
   electionscomm: ["ASNC Elections Committee Meeting","ASNC Elections Committee Meeting","ASNC Elections Committee Meeting"],
 };
-const CHANGELOG_HEADERS = ["Timestamp","Officer","Position","Meeting","Date","Old Value","New Value","Total Before","Total After","Action"];
+const CHANGELOG_HEADERS = ["Timestamp","Officer","Position","Meeting","Date","Old Value","New Value","Total Before","Total After","Action","LoggedBy","LoggedByEmail","Tab","ColIdx","TimestampMs"];
+const SETTINGS_HEADERS  = ["Email","Name","Title","Org","SenderEmail","Phone"];
 
 function tabDisplay(t) {
   if (KNOWN_TABS[t]) return KNOWN_TABS[t];
@@ -295,7 +296,8 @@ const S = {
   selectedColIdx: null, selectedDateLbl: null, selectedCodeKey: "1",
   autoMode: true, pendingWrite: null, changelog: [],
   cellValue: "",
-  sender: JSON.parse(localStorage.getItem("sender") || "{}"),
+  user: null,
+  sender: {},
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -358,16 +360,115 @@ document.getElementById("signInBtn").addEventListener("click", () => {
   tokenClient.requestAccessToken({ prompt: "consent" });
 });
 
-function afterAuth() {
-  loadPersistedChangelog();
+async function afterAuth() {
+  await fetchUserInfo();
   if (!S.sheetId) {
     switchScreen("setupScreen");
   } else {
-    switchScreen(null);
-    document.getElementById("app").classList.add("active");
-    renderCL();
-    loadData();
+    await showApp();
   }
+}
+
+async function showApp() {
+  switchScreen(null);
+  document.getElementById("app").classList.add("active");
+  await loadSettings();
+  fillSenderFields();
+  await loadChangelogFromSheet();
+  renderCL();
+  loadData();
+}
+
+// ── User info & cloud settings ────────────────────────────────────────────────
+
+async function fetchUserInfo() {
+  try {
+    const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: "Bearer " + S.token }
+    });
+    if (r.ok) { const u = await r.json(); S.user = { email: u.email||"", name: u.name||"" }; }
+  } catch(e) {}
+}
+
+async function ensureSheet(title, headers) {
+  const meta = await apiFetch(`${API}/${S.sheetId}?fields=sheets.properties.title`);
+  if (meta.sheets.some(s => s.properties.title === title)) return;
+  await apiFetch(`${API}/${S.sheetId}:batchUpdate`, {method:"POST", body:{requests:[{addSheet:{properties:{title}}}]}});
+  const range = `${title}!A1:${colLetter(headers.length)}1`;
+  await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, {method:"PUT", body:{values:[headers]}});
+}
+
+async function loadSettings() {
+  if (!S.user || !S.sheetId) return;
+  try {
+    await ensureSheet("settings", SETTINGS_HEADERS);
+    const r = await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("settings!A:F")}`);
+    const rows = r.values || [];
+    const row = rows.find((r, i) => i > 0 && (r[0]||"").toLowerCase() === S.user.email.toLowerCase());
+    if (row) S.sender = { name:row[1]||"", title:row[2]||"", org:row[3]||"", email:row[4]||"", phone:row[5]||"" };
+  } catch(e) { console.warn("loadSettings:", e); }
+}
+
+async function saveSettings() {
+  if (!S.user || !S.sheetId) { setStatus("Sign in first to save settings.", true); return; }
+  S.sender = { name:$v("sName"), title:$v("sTitle"), org:$v("sOrg"), email:$v("sEmail"), phone:$v("sPhone") };
+  try {
+    await ensureSheet("settings", SETTINGS_HEADERS);
+    const r = await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("settings!A:A")}`);
+    const rows = r.values || [];
+    let updateRow = -1;
+    for (let i = 1; i < rows.length; i++) {
+      if ((rows[i][0]||"").toLowerCase() === S.user.email.toLowerCase()) { updateRow = i + 1; break; }
+    }
+    const vals = [[S.user.email, S.sender.name, S.sender.title, S.sender.org, S.sender.email, S.sender.phone]];
+    if (updateRow > 0) {
+      await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("settings!A"+updateRow+":F"+updateRow)}?valueInputOption=USER_ENTERED`, {method:"PUT", body:{values:vals}});
+    } else {
+      await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("settings!A:F")}:append?valueInputOption=USER_ENTERED`, {method:"POST", body:{values:vals}});
+    }
+    document.getElementById("settingsPanel").classList.remove("open");
+    setStatus("Settings saved.");
+  } catch(e) { setStatus("Could not save settings: "+e.message, true); }
+}
+
+async function loadChangelogFromSheet() {
+  S.changelog = [];
+  if (!S.sheetId) return;
+  try {
+    const r = await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A:O")}`);
+    const rows = r.values || [];
+    if (rows.length < 2) return;
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const allRows = rows.slice(1).map(row => ({
+      row,
+      tsMs:   parseFloat(row[14]||"0"),
+      action: row[9]||"",
+      key:    `${row[1]}||${row[12]}||${parseInt(row[13]||"0")}||${row[4]}`,
+    })).filter(r => r.tsMs > cutoff);
+
+    const entries = [];
+    allRows.forEach(r => {
+      if (r.action !== "Write") return;
+      const laterRevert = allRows.some(r2 => r2.action==="Revert" && r2.key===r.key && r2.tsMs>r.tsMs);
+      const row = r.row;
+      entries.push({
+        officer:     { name: row[1]||"", position: row[2]||"" },
+        tab:         row[12]||"",
+        colIndex:    parseInt(row[13]||"0"),
+        dateDisplay: row[4]||"",
+        oldValue:    row[5]==="∅" ? "" : (row[5]||""),
+        codeValue:   row[6]||"",
+        totalBefore: parseFloat(row[7]||"0"),
+        newTotal:    parseFloat(row[8]||"0"),
+        loggedBy:    row[10]||"?",
+        timestamp:   row[0]||"",
+        tsMs:        r.tsMs,
+        status:      laterRevert ? "reverted" : "done",
+      });
+    });
+    entries.sort((a,b) => b.tsMs - a.tsMs);
+    S.changelog = entries;
+  } catch(e) { /* changelog sheet doesn't exist yet — silently ignore */ }
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -385,9 +486,7 @@ document.getElementById("connectBtn").addEventListener("click", async () => {
     S.sheetId = id;
     localStorage.setItem("sheetId", id);
     show("setupErr","");
-    switchScreen(null);
-    document.getElementById("app").classList.add("active");
-    loadData();
+    await showApp();
   } catch(e) { show("setupErr","Could not connect: " + e.message); }
 });
 
@@ -749,7 +848,7 @@ async function doWrite(pw) {
     });
     setStatus("✓ "+pw.codeValue+" written — new total: "+pw.newTotal+" pts");
     addCL(pw,"done");
-    writeChangelog(pw.officer.name,pw.officer.position,pw.tab,pw.dateDisplay,oldVal,pw.codeValue,pw.totalBefore,pw.newTotal,"Write");
+    writeChangelog(pw.officer.name,pw.officer.position,pw.tab,pw.dateDisplay,oldVal,pw.codeValue,pw.totalBefore,pw.newTotal,"Write",pw.colIndex);
   } catch(e) {
     setStatus("⚠ Sync failed: "+e.message,true);addCL(pw,"failed");
   }
@@ -776,51 +875,35 @@ async function doRevert(entry) {
       updatePreview();
     }
     setStatus("↩ Reverted "+entry.officer.name+" — "+entry.codeValue+" removed.");
-    writeChangelog(entry.officer.name,entry.officer.position,entry.tab,entry.dateDisplay,entry.codeValue,entry.oldValue||"∅",entry.newTotal,entry.totalBefore,"Revert");
+    writeChangelog(entry.officer.name,entry.officer.position,entry.tab,entry.dateDisplay,entry.codeValue,entry.oldValue||"∅",entry.newTotal,entry.totalBefore,"Revert",entry.colIndex);
   } catch(e) {
     entry.status="done";setStatus("⚠ Revert failed: "+e.message,true);
   }
-  renderCL();saveChangelog();setLoading(false);
+  renderCL();setLoading(false);
 }
 
 // ── Changelog sheet write ─────────────────────────────────────────────────────
 
-async function writeChangelog(name,pos,tab,date,oldVal,newVal,before,after,action) {
+async function writeChangelog(name,pos,tab,date,oldVal,newVal,before,after,action,colIdx) {
   try {
-    // Ensure changelog sheet exists
-    const meta=await apiFetch(`${API}/${S.sheetId}?fields=sheets.properties.title`);
-    const exists=meta.sheets.some(s=>s.properties.title==="changelog");
-    if(!exists){
-      await apiFetch(`${API}/${S.sheetId}:batchUpdate`,{method:"POST",body:{requests:[{addSheet:{properties:{title:"changelog"}}}]}});
-      await apiFetch(`${API}/${S.sheetId}/values/changelog!A1:J1?valueInputOption=USER_ENTERED`,{method:"PUT",body:{values:[CHANGELOG_HEADERS]}});
-    }
+    await ensureSheet("changelog", CHANGELOG_HEADERS);
     const now=new Date();
     const ts=(now.getMonth()+1)+"/"+now.getDate()+"  "+now.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    await apiFetch(`${API}/${S.sheetId}/values/changelog!A:J:append?valueInputOption=USER_ENTERED`,{method:"POST",body:{values:[[ts,name,pos,tabDisplay(tab)[0],date,oldVal||"∅",newVal,before,after,action]]}});
+    const loggedBy=(S.user&&S.user.name||S.sender.name||"").split(" ")[0]||"?";
+    const loggedByEmail=(S.user&&S.user.email)||"";
+    const tsMs=Date.now();
+    await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A:O")}:append?valueInputOption=USER_ENTERED`,{
+      method:"POST",
+      body:{values:[[ts,name,pos,tabDisplay(tab)[0],date,oldVal||"∅",newVal,before,after,action,loggedBy,loggedByEmail,tab,colIdx||"",tsMs]]}
+    });
   } catch(e){ console.warn("Changelog write failed:",e); }
-}
-
-// ── Changelog persistence ─────────────────────────────────────────────────────
-
-function loadPersistedChangelog() {
-  try {
-    const raw = localStorage.getItem("cl24");
-    if (!raw) return;
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    S.changelog = JSON.parse(raw).filter(e => e.tsMs && e.tsMs > cutoff);
-  } catch(e) { S.changelog = []; }
-}
-
-function saveChangelog() {
-  try { localStorage.setItem("cl24", JSON.stringify(S.changelog)); } catch(e) {}
 }
 
 // ── Changelog UI ──────────────────────────────────────────────────────────────
 
 function addCL(pw,status) {
-  const loggedBy=(S.sender.name||"").split(" ")[0]||"?";
+  const loggedBy=(S.user&&S.user.name||S.sender.name||"").split(" ")[0]||"?";
   S.changelog.unshift({...pw,status,loggedBy,tsMs:Date.now(),timestamp:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})});
-  saveChangelog();
   renderCL();
 }
 
@@ -852,7 +935,7 @@ function renderCL() {
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-document.getElementById("reloadBtn").addEventListener("click",loadData);
+document.getElementById("reloadBtn").addEventListener("click",async()=>{await loadChangelogFromSheet();renderCL();loadData();});
 document.getElementById("resetBtn").addEventListener("click",()=>{
   S.pendingWrite=null;document.getElementById("writeBtn").disabled=true;
   if(S.roster.length) selectOfficer(S.roster[0]);
@@ -874,12 +957,7 @@ document.getElementById("modeManual").addEventListener("click",()=>{
 document.getElementById("settingsBtn").addEventListener("click",()=>{
   document.getElementById("settingsPanel").classList.toggle("open");
 });
-document.getElementById("saveSettingsBtn").addEventListener("click",()=>{
-  S.sender={name:$v("sName"),title:$v("sTitle"),org:$v("sOrg"),email:$v("sEmail"),phone:$v("sPhone")};
-  localStorage.setItem("sender",JSON.stringify(S.sender));
-  document.getElementById("settingsPanel").classList.remove("open");
-  setStatus("Settings saved.");
-});
+document.getElementById("saveSettingsBtn").addEventListener("click",()=>saveSettings());
 
 function fillSenderFields() {
   ["sName","sTitle","sOrg","sEmail","sPhone"].forEach(id=>{
