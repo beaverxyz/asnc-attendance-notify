@@ -369,7 +369,7 @@ const CODE_DISPLAY = [
   {label:"Excused Absence (+0.5 pts)",key:"3"},{label:"Fully Excused (0 pts)",key:"4"},
   {label:"Present (−0.5 pts)",key:"5"},{label:"Present Quarter (−0.25 pts)",key:"6"},
 ];
-const CODE_COLORS  = {"1":"#f87171","2":"#fbbf24","3":"#60a5fa","4":"#6b7280","5":"#4ade80","6":"#a3e635"};
+const CODE_COLORS  = {"1":"#f87171","2":"#fbbf24","3":"#93c5fd","4":"#3b82f6","5":"#4ade80","6":"#86efac"};
 const SKIP         = ["main","info","changelog","settings"];
 const KNOWN_TABS   = {
   senate:        ["ASNC Senate Meeting","ASNC Senate Meeting","ASNC Legislative Senate Meeting"],
@@ -722,7 +722,7 @@ function formatDate(raw) {
 
 // ── Color & risk helpers ──────────────────────────────────────────────────────
 
-const DEPT_COLORS={administration:"#94a3b8",finance:"#fbbf24",activities:"#4ade80",relations:"#818cf8",organizations:"#fb923c"};
+const DEPT_COLORS={administration:"#60a5fa",finance:"#a78bfa",activities:"#f472b6",relations:"#4ade80",organizations:"#fbbf24"};
 const PALETTE=["#e879f9","#2dd4bf","#fb7185","#38bdf8","#a3e635","#c084fc"];
 const deptCache={};
 
@@ -863,7 +863,8 @@ const dateSel=document.getElementById("dateSel");
 function populateUI() {
   const codeSel=document.getElementById("codeSel");
   codeSel.innerHTML="";
-  CODE_DISPLAY.forEach(c=>{const o=document.createElement("option");o.value=c.key;o.textContent=c.label;codeSel.appendChild(o);});
+  CODE_DISPLAY.forEach(c=>{const o=document.createElement("option");o.value=c.key;o.textContent=c.label;o.style.color=CODE_COLORS[c.key];codeSel.appendChild(o);});
+  codeSel.style.color=CODE_COLORS[S.selectedCodeKey];
 
   meetingSel.innerHTML="";
   S.tabLabels.forEach((lbl,i)=>{const o=document.createElement("option");o.value=i;o.textContent=lbl;meetingSel.appendChild(o);});
@@ -919,7 +920,9 @@ dateSel.addEventListener("change",()=>{
   S.cellValue="";fetchCell();updatePreview();
 });
 document.getElementById("codeSel").addEventListener("change",()=>{
-  S.selectedCodeKey=document.getElementById("codeSel").value;
+  const sel=document.getElementById("codeSel");
+  S.selectedCodeKey=sel.value;
+  sel.style.color=CODE_COLORS[S.selectedCodeKey];
   updatePreview();
 });
 
