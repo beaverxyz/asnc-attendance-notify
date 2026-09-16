@@ -189,6 +189,32 @@ select:focus{outline:none;border-color:#2d6a4f}
 .queue-open{background:#1b4332;border:1px solid #2d6a4f;color:#74c69d;border-radius:5px;padding:3px 10px;font-size:10px;cursor:pointer;white-space:nowrap}
 .queue-open:hover{background:#2d6a4f}
 .queue-done{font-size:10px;color:#374151;white-space:nowrap}
+
+/* ── App tab nav ── */
+.app-tab-nav{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid #272727}
+.app-tab-btn{flex:1;height:36px;background:transparent;border:none;border-bottom:2px solid transparent;color:#6b7280;font-size:12px;font-weight:600;cursor:pointer;transition:color .15s,border-color .15s;letter-spacing:.3px}
+.app-tab-btn:hover{color:#9ca3af}
+.app-tab-btn.active{color:#74c69d;border-bottom-color:#2d6a4f}
+
+/* ── Distribute panel ── */
+.dist-section-hdr{font-size:11px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin:22px 0 12px;padding-bottom:8px;border-bottom:1px solid #272727}
+.dist-section-hdr:first-child{margin-top:0}
+.dist-recipients{width:100%;height:68px;background:#111;color:#9ca3af;border:1px solid #2e2e2e;border-radius:7px;padding:8px 10px;font-size:11px;resize:vertical;line-height:1.5;font-family:inherit}
+.dist-recipients:focus{outline:none;border-color:#2d6a4f}
+.dist-attach-note{font-size:10px;color:#4b5563;text-align:center;margin-top:6px}
+.pdf-drop{border:1.5px dashed #2e2e2e;border-radius:9px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;margin-top:2px}
+.pdf-drop:hover,.pdf-drop.dragover{border-color:#2d6a4f}
+.pdf-drop-label{font-size:12px;color:#4b5563}
+.pdf-drop-sub{font-size:10px;color:#374151;margin-top:4px}
+.pdf-thumb-wrap{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.pdf-thumb{width:100%;border-radius:6px;border:1px solid #2e2e2e;display:block}
+.pdf-page-lbl{font-size:10px;color:#4b5563;margin-bottom:2px}
+.dist-webhook-row{display:flex;gap:6px;align-items:center;margin-top:2px}
+.dist-webhook-input{flex:1;height:36px;background:#111;color:#e8e8e8;border:1px solid #2e2e2e;border-radius:7px;padding:0 10px;font-size:12px}
+.dist-webhook-input:focus{outline:none;border-color:#2d6a4f}
+.dist-lbl-row{display:flex;justify-content:space-between;align-items:center}
+.dist-reset-link{font-size:10px;color:#4b5563;background:none;border:none;cursor:pointer;padding:0}
+.dist-reset-link:hover{color:#9ca3af}
 </style>
 </head>
 <body>
@@ -250,6 +276,15 @@ select:focus{outline:none;border-color:#2d6a4f}
   <div class="loading-bar" id="loadingBar"></div>
 
   <div class="content">
+
+    <!-- App tab nav -->
+    <div class="app-tab-nav">
+      <button class="app-tab-btn active" id="tabAttendance">Attendance</button>
+      <button class="app-tab-btn" id="tabDistribute">Distribute</button>
+    </div>
+
+    <!-- ── Attendance panel ── -->
+    <div id="attendancePanel">
 
     <!-- Settings panel -->
     <div class="settings-panel" id="settingsPanel">
@@ -346,6 +381,60 @@ select:focus{outline:none;border-color:#2d6a4f}
     <div class="sheet-badge">
       Sheet: <span id="sheetIdBadge"></span> · <a id="changeSheetLink">Change</a>
     </div>
+
+    </div><!-- /attendancePanel -->
+
+    <!-- ── Distribute panel ── -->
+    <div id="distributePanel" style="display:none">
+
+      <!-- Email section -->
+      <div class="dist-section-hdr">Email Distribution</div>
+
+      <div class="field-label">Document Type</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="distTypeAgenda">Agenda</button>
+        <button class="mode-btn" id="distTypeMinutes">Minutes</button>
+      </div>
+
+      <div class="field-label">Meeting Date</div>
+      <input class="settings-input" id="distDate" placeholder="e.g. 09/04/2026" style="width:100%;height:36px">
+
+      <div class="field-label">
+        <div class="dist-lbl-row">
+          <span>Recipients</span>
+          <button class="dist-reset-link" id="distResetRecip">Reset to default</button>
+        </div>
+      </div>
+      <textarea class="dist-recipients" id="distRecipients"></textarea>
+
+      <button class="btn-primary" id="distEmailBtn" style="margin-top:12px">Open Email Draft</button>
+      <div class="dist-attach-note">Attach the PDF before sending</div>
+
+      <!-- Discord section -->
+      <div class="dist-section-hdr">Post to Discord</div>
+
+      <div class="field-label">Webhook URL</div>
+      <div class="dist-webhook-row">
+        <input class="dist-webhook-input" id="discordWebhook" placeholder="https://discord.com/api/webhooks/…" type="password">
+        <button class="btn-sec" id="saveWebhookBtn" style="height:36px;width:56px;margin-top:0">Save</button>
+      </div>
+
+      <div class="field-label" style="margin-top:14px">PDF File</div>
+      <div class="pdf-drop" id="pdfDropZone">
+        <div class="pdf-drop-label" id="pdfDropLabel">Drop PDF here or click to select</div>
+        <div class="pdf-drop-sub" id="pdfDropSub">Pages will be rendered as PNG images</div>
+        <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display:none">
+      </div>
+
+      <div id="pdfPreviewWrap" style="display:none;margin-top:10px">
+        <div class="field-label">Preview</div>
+        <div class="pdf-thumb-wrap" id="pdfPreviewPages"></div>
+      </div>
+
+      <button class="btn-primary" id="discordPostBtn" disabled style="margin-top:12px">Post to Discord</button>
+
+    </div><!-- /distributePanel -->
+
   </div>
 </div>
 
@@ -1451,6 +1540,199 @@ function switchScreen(id) {
   ["authScreen","setupScreen"].forEach(s=>document.getElementById(s).classList.remove("active"));
   if(id) document.getElementById(id).classList.add("active");
 }
+
+// ── Distribute tab ────────────────────────────────────────────────────────────
+
+const DIST_DEFAULT_RECIPIENTS = "edwin.romero@norcocollege.edu; achaudhry8@student.rccd.edu; akahlon1@student.rccd.edu; aazam2@student.rccd.edu; mali27@student.rccd.edu; caguilar101@student.rccd.edu; iaguilar47@student.rccd.edu; jgrewal2@student.rccd.edu; jyang42@student.rccd.edu; mkhan42@student.rccd.edu; adarcy2@student.rccd.edu; nsarwary1@student.rccd.edu; mdumlao1@student.rccd.edu; aogelle1@student.rccd.edu; atorres486@student.rccd.edu; ahernandez946@student.rccd.edu; cemerueh1@student.rccd.edu; jmorcos1@student.rccd.edu; skarathi2@student.rccd.edu; agonzalesg@student.rccd.edu; asrccd.trustee@rccd.edu";
+
+let distDocType = "Agenda";
+let pdfPages    = [];
+let pdfjsLoaded = false;
+
+function initDistributePanel() {
+  const saved = localStorage.getItem("distRecipients");
+  document.getElementById("distRecipients").value = saved || DIST_DEFAULT_RECIPIENTS;
+  const webhook = localStorage.getItem("discordWebhook") || "";
+  document.getElementById("discordWebhook").value = webhook;
+  const today = new Date();
+  const mm = String(today.getMonth()+1).padStart(2,"0");
+  const dd = String(today.getDate()).padStart(2,"0");
+  const yyyy = today.getFullYear();
+  const distDateEl = document.getElementById("distDate");
+  if (!distDateEl.value) distDateEl.value = `${mm}/${dd}/${yyyy}`;
+}
+
+function switchAppTab(tab) {
+  document.getElementById("attendancePanel").style.display = tab === "attendance" ? "" : "none";
+  document.getElementById("distributePanel").style.display = tab === "distribute" ? "" : "none";
+  document.getElementById("tabAttendance").classList.toggle("active", tab === "attendance");
+  document.getElementById("tabDistribute").classList.toggle("active", tab === "distribute");
+  if (tab === "distribute") {
+    initDistributePanel();
+    if (!pdfjsLoaded) {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      s.onload = () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        pdfjsLoaded = true;
+      };
+      document.head.appendChild(s);
+    }
+  }
+}
+
+document.getElementById("tabAttendance").addEventListener("click", () => switchAppTab("attendance"));
+document.getElementById("tabDistribute").addEventListener("click",  () => switchAppTab("distribute"));
+
+// Doc type toggle
+document.getElementById("distTypeAgenda").addEventListener("click", () => {
+  distDocType = "Agenda";
+  document.getElementById("distTypeAgenda").classList.add("active");
+  document.getElementById("distTypeMinutes").classList.remove("active");
+});
+document.getElementById("distTypeMinutes").addEventListener("click", () => {
+  distDocType = "Minutes";
+  document.getElementById("distTypeMinutes").classList.add("active");
+  document.getElementById("distTypeAgenda").classList.remove("active");
+});
+
+// Save recipients to localStorage on change
+document.getElementById("distRecipients").addEventListener("change", () => {
+  localStorage.setItem("distRecipients", document.getElementById("distRecipients").value);
+});
+
+// Reset recipients
+document.getElementById("distResetRecip").addEventListener("click", () => {
+  document.getElementById("distRecipients").value = DIST_DEFAULT_RECIPIENTS;
+  localStorage.setItem("distRecipients", DIST_DEFAULT_RECIPIENTS);
+  toast("Recipients reset to default.");
+});
+
+// Email draft
+document.getElementById("distEmailBtn").addEventListener("click", () => {
+  const date    = document.getElementById("distDate").value.trim();
+  const recips  = document.getElementById("distRecipients").value.trim();
+  if (!recips) { toast("Add at least one recipient.", "err"); return; }
+  const sd      = S.sender;
+  const signoff = [sd.name||"", sd.title?(sd.title+","):"", sd.org||"", sd.email||"", sd.phone||""].filter(l=>l.trim().replace(",","")).join("\n");
+  const docWord = distDocType === "Agenda" ? "agenda" : "minutes";
+  const verb    = distDocType === "Agenda" ? "is" : "are";
+  const subject = `ASNC Senate ${distDocType}${date ? " " + date : ""}`;
+  const body    = `Good morning, ASNC,\n\nAttached ${verb} the ${docWord} for this week's senate meeting. Let me know if you have any questions or concerns.\n\nBest,\n\n${signoff}`;
+  const to      = recips.split(/[;,]/).map(e=>e.trim()).filter(Boolean).join(";");
+  const mailto  = "mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  window.open(mailto);
+  toast("✓ Email client opened — attach the PDF before sending.");
+});
+
+// Save webhook
+document.getElementById("saveWebhookBtn").addEventListener("click", () => {
+  const v = document.getElementById("discordWebhook").value.trim();
+  if (!v) { toast("Paste a webhook URL first.", "err"); return; }
+  localStorage.setItem("discordWebhook", v);
+  toast("Webhook saved.");
+});
+
+// PDF drop zone
+const pdfDropZone  = document.getElementById("pdfDropZone");
+const pdfFileInput = document.getElementById("pdfFileInput");
+
+pdfDropZone.addEventListener("click", () => pdfFileInput.click());
+pdfDropZone.addEventListener("dragover", e => { e.preventDefault(); pdfDropZone.classList.add("dragover"); });
+pdfDropZone.addEventListener("dragleave", () => pdfDropZone.classList.remove("dragover"));
+pdfDropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  pdfDropZone.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file) handlePDF(file);
+});
+pdfFileInput.addEventListener("change", () => {
+  if (pdfFileInput.files[0]) handlePDF(pdfFileInput.files[0]);
+});
+
+async function handlePDF(file) {
+  if (!file.type.includes("pdf") && !file.name.endsWith(".pdf")) {
+    toast("Please select a PDF file.", "err"); return;
+  }
+  if (!pdfjsLoaded) {
+    toast("PDF library still loading, try again in a moment.", "err"); return;
+  }
+  document.getElementById("pdfDropLabel").textContent = file.name;
+  document.getElementById("pdfDropSub").textContent = "Rendering pages…";
+  pdfPages = [];
+  const previewPages = document.getElementById("pdfPreviewPages");
+  previewPages.innerHTML = "";
+  document.getElementById("pdfPreviewWrap").style.display = "none";
+  document.getElementById("discordPostBtn").disabled = true;
+
+  try {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page     = await pdf.getPage(i);
+      const vp       = page.getViewport({ scale: 2 });
+      const canvas   = document.createElement("canvas");
+      canvas.width   = vp.width;
+      canvas.height  = vp.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      const blob     = await new Promise(r => canvas.toBlob(r, "image/png"));
+      pdfPages.push(blob);
+
+      const lbl = document.createElement("div");
+      lbl.className = "pdf-page-lbl";
+      lbl.textContent = `Page ${i} of ${pdf.numPages}`;
+      previewPages.appendChild(lbl);
+
+      const thumb       = document.createElement("canvas");
+      const thumbScale  = Math.min(1, (document.getElementById("pdfPreviewPages").clientWidth || 300) / vp.width);
+      thumb.width       = Math.round(vp.width  * thumbScale);
+      thumb.height      = Math.round(vp.height * thumbScale);
+      thumb.className   = "pdf-thumb";
+      const tc = thumb.getContext("2d");
+      tc.scale(thumbScale, thumbScale);
+      tc.drawImage(canvas, 0, 0);
+      previewPages.appendChild(thumb);
+    }
+    document.getElementById("pdfPreviewWrap").style.display = "block";
+    document.getElementById("discordPostBtn").disabled = false;
+    document.getElementById("pdfDropSub").textContent = `${pdf.numPages} page${pdf.numPages>1?"s":""} ready`;
+    toast(`✓ ${pdf.numPages} page${pdf.numPages>1?"s":""} loaded.`);
+  } catch(e) {
+    toast("Could not read PDF: " + e.message, "err");
+    document.getElementById("pdfDropSub").textContent = "Pages will be rendered as PNG images";
+  }
+}
+
+// Discord post
+document.getElementById("discordPostBtn").addEventListener("click", async () => {
+  const webhook = localStorage.getItem("discordWebhook") || "";
+  if (!webhook) { toast("Save a webhook URL first.", "err"); return; }
+  if (!pdfPages.length) { toast("Load a PDF first.", "err"); return; }
+
+  const btn = document.getElementById("discordPostBtn");
+  btn.disabled = true;
+  btn.textContent = "Posting…";
+
+  try {
+    const CHUNK = 10;
+    for (let i = 0; i < pdfPages.length; i += CHUNK) {
+      const chunk = pdfPages.slice(i, i + CHUNK);
+      const fd = new FormData();
+      fd.append("payload_json", JSON.stringify({ content: "" }));
+      chunk.forEach((blob, j) => fd.append(`files[${j}]`, blob, `page-${i+j+1}.png`));
+      const r = await fetch(webhook, { method: "POST", body: fd });
+      if (!r.ok) { const t = await r.text(); throw new Error(`Discord ${r.status}: ${t}`); }
+      if (i + CHUNK < pdfPages.length) await new Promise(r => setTimeout(r, 500));
+    }
+    toast("✓ Posted to Discord.");
+    btn.textContent = "Post to Discord";
+    btn.disabled = false;
+  } catch(e) {
+    toast("Failed: " + e.message, "err");
+    btn.textContent = "Post to Discord";
+    btn.disabled = false;
+  }
+});
 
 function setLoading(on) {
   document.getElementById("loadingBar").classList.toggle("active",on);
