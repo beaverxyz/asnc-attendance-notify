@@ -445,6 +445,10 @@ async function loadChangelogFromSheet() {
   try {
     const r = await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A:O")}`);
     const rows = r.values || [];
+    // Patch header row if sheet was created by an older version with fewer columns
+    if (rows.length > 0 && rows[0].length < CHANGELOG_HEADERS.length) {
+      await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A1:O1")}?valueInputOption=USER_ENTERED`, {method:"PUT", body:{values:[CHANGELOG_HEADERS]}});
+    }
     if (rows.length < 2) return;
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const allRows = rows.slice(1).map(row => ({
