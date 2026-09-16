@@ -248,9 +248,10 @@ select:focus{outline:none;border-color:#2d6a4f}
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const CLIENT_ID = '34316801041-qhe90m04scl31ctn04jqad4vqihdkbc7.apps.googleusercontent.com';
-const SCOPE     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
-const API       = 'https://sheets.googleapis.com/v4/spreadsheets';
+const CLIENT_ID    = '34316801041-qhe90m04scl31ctn04jqad4vqihdkbc7.apps.googleusercontent.com';
+const SCOPE        = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+const SCOPE_VER    = 'v3'; // bump whenever SCOPE changes so cached tokens are discarded
+const API          = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -314,6 +315,12 @@ function gisLoaded() {
     error_callback: () => { /* silent attempt failed — sign-in button stays visible */ },
   });
 
+  // Discard cached token if scope changed since it was issued
+  if (sessionStorage.getItem("scopeVer") !== SCOPE_VER) {
+    sessionStorage.removeItem("gToken");
+    sessionStorage.removeItem("gExpiry");
+  }
+
   // Restore cached token from sessionStorage (survives page refresh)
   const cached = sessionStorage.getItem("gToken");
   const expiry  = parseInt(sessionStorage.getItem("gExpiry") || "0");
@@ -330,8 +337,9 @@ function onToken(resp) {
   if (resp.error) { show("authErr", "Sign-in failed: " + resp.error); return; }
   S.token       = resp.access_token;
   S.tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-  sessionStorage.setItem("gToken",  S.token);
-  sessionStorage.setItem("gExpiry", S.tokenExpiry.toString());
+  sessionStorage.setItem("gToken",   S.token);
+  sessionStorage.setItem("gExpiry",  S.tokenExpiry.toString());
+  sessionStorage.setItem("scopeVer", SCOPE_VER);
   afterAuth();
 }
 
