@@ -76,6 +76,7 @@ select:focus{outline:none;border-color:#2d6a4f}
 
 /* ── At-risk badges ── */
 .risk{font-size:10px;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.risk.good{background:#052e16;color:#4ade80}
 .risk.warn{background:#451a03;color:#fbbf24}
 .risk.danger{background:#450a0a;color:#f87171}
 
@@ -380,8 +381,8 @@ const KNOWN_TABS   = {
 };
 const CHANGELOG_HEADERS = ["Timestamp","Officer","Position","Meeting","Date","Old Value","New Value","Total Before","Total After","Action","LoggedBy","LoggedByEmail","Tab","ColIdx","TimestampMs"];
 const SETTINGS_HEADERS  = ["Email","Name","Title","Org","SenderEmail","Phone"];
-const WARN_PTS    = 3;
-const DANGER_PTS  = 5;
+const WARN_PTS    = 1;
+const DANGER_PTS  = 2;
 
 function tabDisplay(t) {
   if (KNOWN_TABS[t]) return KNOWN_TABS[t];
@@ -751,13 +752,11 @@ function officerColor(o) {
 function riskLevel(total) {
   if (total >= DANGER_PTS) return "danger";
   if (total >= WARN_PTS)   return "warn";
-  return "";
+  return "good";
 }
 
 function riskHtml(total) {
-  const lvl = riskLevel(total);
-  if (!lvl) return `<span style="font-size:10px;color:#374151;margin-left:auto">${total}pt${Math.abs(total)===1?"":"s"}</span>`;
-  return `<span class="risk ${lvl}" style="margin-left:auto">${total}pts</span>`;
+  return `<span class="risk ${riskLevel(total)}" style="margin-left:auto">${total}pts</span>`;
 }
 
 function flatItems(roster) {
@@ -849,8 +848,7 @@ function selectOfficer(o) {
   // At-risk badge in trigger
   const rb=document.getElementById("triggerRisk");
   const lvl=riskLevel(o.total);
-  if(lvl){rb.className="risk-badge risk "+lvl;rb.textContent=o.total+"pts";rb.style.display="";}
-  else{rb.style.display="none";}
+  rb.className="risk-badge risk "+lvl;rb.textContent=o.total+"pts";rb.style.display="";
   document.getElementById("officerDetail").textContent="Current total: "+o.total+" pts  ·  "+o.email;
   S.cellValue="";
   fetchCell();
