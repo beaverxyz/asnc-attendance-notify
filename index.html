@@ -56,19 +56,28 @@ select:focus{outline:none;border-color:#2d6a4f}
 .picker-btn::after{content:"▾";position:absolute;right:10px;color:#6b7280;pointer-events:none}
 .picker-btn .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .picker-btn .pname{overflow:hidden;text-overflow:ellipsis;flex:1}
+.picker-btn .risk-badge{font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0}
 
-.picker-dd{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1c1c1c;border:1px solid #2e2e2e;border-radius:9px;max-height:320px;overflow-y:auto;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.picker-dd{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1c1c1c;border:1px solid #2e2e2e;border-radius:9px;max-height:340px;overflow-y:auto;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)}
 .picker-dd.open{display:block}
+.picker-search{width:calc(100% - 16px);margin:8px 8px 4px;height:30px;background:#111;border:1px solid #2e2e2e;border-radius:5px;padding:0 9px;font-size:12px;color:#e8e8e8;display:block}
+.picker-search:focus{outline:none;border-color:#2d6a4f}
 .picker-section{font-size:9px;font-weight:700;letter-spacing:.8px;color:#4b5563;padding:8px 12px 2px;text-transform:uppercase}
-.picker-row{padding:7px 12px 7px 22px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.picker-row{padding:6px 12px 6px 22px;cursor:pointer;display:flex;align-items:center;gap:7px}
 .picker-row.bold{padding-left:12px}
 .picker-row:hover{background:#252525}
 .picker-row.cur{background:#1a2e22}
 .picker-row .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.picker-row .rname{font-size:12px;font-weight:500}
-.picker-row .rpos{font-size:11px;color:#4b5563;margin-left:2px}
+.picker-row .rname{font-size:12px;font-weight:500;flex:1}
+.picker-row .rpos{font-size:10px;color:#4b5563}
+.picker-no-match{font-size:11px;color:#374151;text-align:center;padding:14px}
 
 .officer-detail{font-size:11px;color:#4b5563;margin-top:5px;padding:0 2px}
+
+/* ── At-risk badges ── */
+.risk{font-size:10px;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.risk.warn{background:#451a03;color:#fbbf24}
+.risk.danger{background:#450a0a;color:#f87171}
 
 /* ── Preview card ── */
 .card{background:#191919;border:1px solid #272727;border-radius:9px;padding:14px 16px;margin-top:16px}
@@ -85,6 +94,7 @@ select:focus{outline:none;border-color:#2d6a4f}
 .mode-btn{flex:1;height:34px;border:1px solid #2e2e2e;background:#1e1e1e;color:#6b7280;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
 .mode-btn:first-child{border-radius:7px 0 0 7px}
 .mode-btn:last-child{border-radius:0 7px 7px 0;border-left:none}
+.mode-btn:not(:first-child){border-left:none}
 .mode-btn.active{background:#2d6a4f;color:#fff;border-color:#2d6a4f}
 .mode-hint{font-size:10px;color:#374151;margin-top:5px}
 
@@ -96,10 +106,6 @@ select:focus{outline:none;border-color:#2d6a4f}
 .btn-sec{flex:1;height:34px;background:transparent;color:#6b7280;border:1px solid #2e2e2e;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
 .btn-sec:hover{background:#1e1e1e;color:#e8e8e8}
 .btn-sec:disabled{opacity:.3;cursor:default}
-
-/* ── Status ── */
-.status{text-align:center;font-size:12px;color:#74c69d;min-height:18px;margin-top:10px}
-.status.err{color:#f87171}
 
 /* ── Changelog ── */
 .cl-hdr{display:flex;justify-content:space-between;align-items:center;margin-top:22px;margin-bottom:7px}
@@ -113,6 +119,9 @@ select:focus{outline:none;border-color:#2d6a4f}
 .cl-revert{background:transparent;border:1px solid #2e2e2e;color:#6b7280;border-radius:5px;padding:3px 9px;font-size:10px;cursor:pointer;white-space:nowrap}
 .cl-revert:hover{background:#1e1e1e}
 .cl-empty{font-size:11px;color:#374151;text-align:center;padding:14px}
+.cl-confirm-wrap{display:flex;gap:5px;align-items:center;white-space:nowrap}
+.cl-confirm-yes{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer}
+.cl-confirm-no{background:transparent;color:#6b7280;border:1px solid #2e2e2e;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer}
 
 /* ── Settings panel ── */
 .settings-panel{background:#191919;border:1px solid #272727;border-radius:9px;padding:16px;display:none;flex-direction:column;gap:8px;margin-top:16px}
@@ -126,6 +135,58 @@ select:focus{outline:none;border-color:#2d6a4f}
 .sheet-badge{font-size:10px;color:#374151;margin-top:auto;padding:8px 20px 12px;text-align:center}
 .sheet-badge a{color:#2d6a4f;cursor:pointer;text-decoration:none}
 .sheet-badge a:hover{text-decoration:underline}
+
+/* ── Toast ── */
+.toast-stack{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column-reverse;gap:8px;z-index:9999;pointer-events:none;align-items:flex-end}
+.toast{background:#1e1e1e;border:1px solid #2e2e2e;border-radius:8px;padding:10px 14px;font-size:12px;color:#e8e8e8;pointer-events:auto;animation:toast-in .2s ease;max-width:300px;line-height:1.4;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+.toast.err{border-color:#7f1d1d;color:#fca5a5;background:#1a0808}
+.toast.ok{border-color:#14532d}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Summary overlay ── */
+.summary-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;align-items:flex-start;justify-content:center;padding:20px}
+.summary-overlay.open{display:flex}
+.summary-card{background:#1c1c1c;border:1px solid #2a2a2a;border-radius:12px;width:100%;max-width:560px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;overflow:hidden}
+.summary-head{padding:12px 16px;border-bottom:1px solid #272727;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.summary-title-wrap{display:flex;flex-direction:column;gap:2px;flex:1}
+.summary-title{font-size:13px;font-weight:700;color:#fff}
+.summary-meta{font-size:10px;color:#4b5563}
+.summary-close{background:transparent;border:none;color:#6b7280;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
+.summary-close:hover{color:#e8e8e8;background:#2a2a2a}
+.summary-body{overflow-y:auto;padding:6px 0}
+.summary-section{font-size:9px;font-weight:700;letter-spacing:.8px;color:#374151;padding:10px 14px 2px;text-transform:uppercase}
+.summary-row{display:flex;align-items:center;gap:7px;padding:5px 14px;cursor:pointer}
+.summary-row:hover{background:#1e1e1e}
+.summary-name{font-size:12px;flex:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-pos{font-size:10px;color:#4b5563;flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-pts{font-size:10px;width:44px;text-align:right;white-space:nowrap;flex-shrink:0}
+.summary-code{font-size:11px;font-weight:700;width:52px;text-align:right;white-space:nowrap;flex-shrink:0}
+.summary-code.empty{color:#374151;font-weight:400}
+
+/* ── Bulk mode ── */
+.bulk-section{margin-top:12px;display:none}
+.bulk-section.active{display:block}
+.bulk-controls{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bulk-count{font-size:11px;color:#6b7280;flex:1}
+.bulk-ctrl-btn{background:none;border:none;font-size:11px;color:#4b5563;cursor:pointer;padding:2px 6px;border-radius:4px}
+.bulk-ctrl-btn:hover{color:#9ca3af;background:#1e1e1e}
+.bulk-list{border:1px solid #272727;border-radius:8px;overflow:hidden;max-height:280px;overflow-y:auto}
+.bulk-section-lbl{font-size:9px;font-weight:700;letter-spacing:.8px;color:#374151;padding:7px 10px 2px;text-transform:uppercase;background:#141414}
+.bulk-row{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer}
+.bulk-row:hover{background:#1a1a1a}
+.bulk-row input[type=checkbox]{accent-color:#2d6a4f;width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.bulk-name{font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bulk-pos{font-size:10px;color:#4b5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.bulk-pts{font-size:10px;white-space:nowrap;flex-shrink:0}
+
+/* ── Email queue ── */
+.queue-entry{background:#171717;border-radius:7px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.queue-entry.sent{opacity:.4}
+.queue-text{font-size:11px;color:#6b7280;flex:1;line-height:1.4}
+.queue-text b{color:#9ca3af}
+.queue-open{background:#1b4332;border:1px solid #2d6a4f;color:#74c69d;border-radius:5px;padding:3px 10px;font-size:10px;cursor:pointer;white-space:nowrap}
+.queue-open:hover{background:#2d6a4f}
+.queue-done{font-size:10px;color:#374151;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -143,7 +204,7 @@ select:focus{outline:none;border-color:#2d6a4f}
   </div>
 </div>
 
-<!-- Setup screen (sheet ID) -->
+<!-- Setup screen -->
 <div class="screen" id="setupScreen">
   <div class="screen-card">
     <div class="screen-title">Connect your Sheet</div>
@@ -154,11 +215,29 @@ select:focus{outline:none;border-color:#2d6a4f}
   </div>
 </div>
 
+<!-- Summary overlay -->
+<div class="summary-overlay" id="summaryOverlay">
+  <div class="summary-card">
+    <div class="summary-head">
+      <div class="summary-title-wrap">
+        <span class="summary-title" id="summaryTitle">Meeting Summary</span>
+        <span class="summary-meta" id="summaryMeta"></span>
+      </div>
+      <button class="summary-close" id="closeSummaryBtn">✕</button>
+    </div>
+    <div class="summary-body" id="summaryBody"></div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
 <!-- Main app -->
 <div id="app">
   <div class="header">
     <span class="header-title">ASNC Attendance Notify</span>
     <div class="header-actions">
+      <button class="icon-btn" id="summaryBtn" title="Meeting summary">≡</button>
       <button class="icon-btn" id="reloadBtn" title="Reload">↺</button>
       <button class="icon-btn" id="settingsBtn" title="Sender settings">⚙</button>
     </div>
@@ -179,11 +258,12 @@ select:focus{outline:none;border-color:#2d6a4f}
     </div>
 
     <!-- Officer -->
-    <div class="field-label">Officer</div>
+    <div class="field-label" id="officerLbl">Officer</div>
     <div class="picker-wrap" id="pickerWrap">
       <button class="picker-btn" id="pickerBtn">
         <span class="dot" id="triggerDot"></span>
         <span class="pname" id="triggerName">Loading…</span>
+        <span class="risk-badge" id="triggerRisk" style="display:none"></span>
       </button>
       <div class="picker-dd" id="pickerDd"></div>
     </div>
@@ -201,8 +281,8 @@ select:focus{outline:none;border-color:#2d6a4f}
     <div class="field-label">Attendance Code</div>
     <select id="codeSel"></select>
 
-    <!-- Preview -->
-    <div class="card">
+    <!-- Preview (hidden in bulk mode) -->
+    <div class="card" id="previewCard">
       <div class="card-title">Preview</div>
       <div class="divider"></div>
       <div class="prev-row"><span class="prev-key">Officer</span><span class="prev-val" id="pOfficer">—</span></div>
@@ -216,27 +296,47 @@ select:focus{outline:none;border-color:#2d6a4f}
     </div>
 
     <!-- Mode -->
-    <div class="field-label">Writeback Mode</div>
+    <div class="field-label">Mode</div>
     <div class="mode-toggle">
       <button class="mode-btn active" id="modeAuto">Auto</button>
       <button class="mode-btn" id="modeManual">Manual</button>
+      <button class="mode-btn" id="modeBulk">Bulk</button>
     </div>
-    <div class="mode-hint">Auto: writes on draft open · Manual: separate Write button</div>
+    <div class="mode-hint" id="modeHint">Auto: writes on draft open · Manual: separate Write button</div>
+
+    <!-- Bulk officer list (visible in bulk mode only) -->
+    <div class="bulk-section" id="bulkSection">
+      <div class="bulk-controls">
+        <span class="bulk-count" id="bulkCount">0 selected</span>
+        <button class="bulk-ctrl-btn" id="selectAllBtn">Select all</button>
+        <button class="bulk-ctrl-btn" id="deselectAllBtn">Clear</button>
+      </div>
+      <div class="bulk-list" id="bulkList"></div>
+    </div>
 
     <!-- Buttons -->
     <button class="btn-primary" id="draftBtn">Open Email Draft</button>
+    <button class="btn-primary" id="bulkQueueBtn" style="display:none">Open Email Queue</button>
     <div class="btn-row">
       <button class="btn-sec" id="writeBtn" disabled>Write to Sheet</button>
       <button class="btn-sec" id="resetBtn">Reset</button>
     </div>
-    <div class="status" id="status"></div>
+
+    <!-- Email queue (bulk mode results) -->
+    <div id="emailQueueSection" style="display:none">
+      <div class="cl-hdr">
+        <span class="cl-title">Email Queue</span>
+        <span class="cl-hint" id="queueHint"></span>
+      </div>
+      <div class="cl-list" id="emailQueueList"></div>
+    </div>
 
     <!-- Changelog -->
     <div class="cl-hdr">
       <span class="cl-title">Changelog</span>
       <span class="cl-hint">last 24 hrs · revert restores old value</span>
     </div>
-    <div class="cl-list" id="clList"><div class="cl-empty">No writebacks yet this session.</div></div>
+    <div class="cl-list" id="clList"><div class="cl-empty">No changes in the last 24 hours.</div></div>
 
     <div class="sheet-badge">
       Sheet: <span id="sheetIdBadge"></span> · <a id="changeSheetLink">Change</a>
@@ -250,7 +350,7 @@ select:focus{outline:none;border-color:#2d6a4f}
 
 const CLIENT_ID    = '34316801041-qhe90m04scl31ctn04jqad4vqihdkbc7.apps.googleusercontent.com';
 const SCOPE        = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
-const SCOPE_VER    = 'v3'; // bump whenever SCOPE changes so cached tokens are discarded
+const SCOPE_VER    = 'v3';
 const API          = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -268,8 +368,9 @@ const CODE_DISPLAY = [
   {label:"Excused Absence (+0.5 pts)",key:"3"},{label:"Fully Excused (0 pts)",key:"4"},
   {label:"Present (−0.5 pts)",key:"5"},{label:"Present Quarter (−0.25 pts)",key:"6"},
 ];
-const SKIP = ["main","info","changelog","settings"];
-const KNOWN_TABS = {
+const CODE_COLORS  = {"1":"#f87171","2":"#fbbf24","3":"#60a5fa","4":"#6b7280","5":"#4ade80","6":"#a3e635"};
+const SKIP         = ["main","info","changelog","settings"];
+const KNOWN_TABS   = {
   senate:        ["ASNC Senate Meeting","ASNC Senate Meeting","ASNC Legislative Senate Meeting"],
   exec:          ["ASNC Executive Committee Meeting","ASNC Executive Committee Meeting","ASNC Executive Committee Meeting"],
   events:        ["Event","Event",null],
@@ -279,6 +380,8 @@ const KNOWN_TABS = {
 };
 const CHANGELOG_HEADERS = ["Timestamp","Officer","Position","Meeting","Date","Old Value","New Value","Total Before","Total After","Action","LoggedBy","LoggedByEmail","Tab","ColIdx","TimestampMs"];
 const SETTINGS_HEADERS  = ["Email","Name","Title","Org","SenderEmail","Phone"];
+const WARN_PTS    = 3;
+const DANGER_PTS  = 5;
 
 function tabDisplay(t) {
   if (KNOWN_TABS[t]) return KNOWN_TABS[t];
@@ -292,13 +395,16 @@ const S = {
   token: null, tokenExpiry: 0,
   sheetId: localStorage.getItem("sheetId") || null,
   roster: [], tabs: [], tabLabels: [],
-  tabData: {},   // tab -> { headers:{colIdx:label}, rows:{name:rowIdx} }
+  tabData: {},
   selectedOfficer: null, selectedTab: null,
   selectedColIdx: null, selectedDateLbl: null, selectedCodeKey: "1",
   autoMode: true, pendingWrite: null, changelog: [],
   cellValue: "",
   user: null,
   sender: {},
+  bulkMode: false,
+  bulkSelected: new Set(),
+  emailQueue: [],
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -312,16 +418,14 @@ function gisLoaded() {
     client_id: CLIENT_ID,
     scope: SCOPE,
     callback: onToken,
-    error_callback: () => { /* silent attempt failed — sign-in button stays visible */ },
+    error_callback: () => {},
   });
 
-  // Discard cached token if scope changed since it was issued
   if (sessionStorage.getItem("scopeVer") !== SCOPE_VER) {
     sessionStorage.removeItem("gToken");
     sessionStorage.removeItem("gExpiry");
   }
 
-  // Restore cached token from sessionStorage (survives page refresh)
   const cached = sessionStorage.getItem("gToken");
   const expiry  = parseInt(sessionStorage.getItem("gExpiry") || "0");
   if (cached && Date.now() < expiry) {
@@ -329,7 +433,6 @@ function gisLoaded() {
     afterAuth(); return;
   }
 
-  // Try silent sign-in — no popup if user already granted consent
   tokenClient.requestAccessToken({ prompt: "" });
 }
 
@@ -355,8 +458,9 @@ function ensureToken() {
       if (resp.error) { reject(new Error(resp.error)); return; }
       S.token = resp.access_token;
       S.tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-      sessionStorage.setItem("gToken",  S.token);
-      sessionStorage.setItem("gExpiry", S.tokenExpiry.toString());
+      sessionStorage.setItem("gToken",   S.token);
+      sessionStorage.setItem("gExpiry",  S.tokenExpiry.toString());
+      sessionStorage.setItem("scopeVer", SCOPE_VER);
       resolve();
     };
     tokenClient.requestAccessToken({ prompt: "" });
@@ -418,7 +522,7 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  if (!S.user || !S.sheetId) { setStatus("Sign in first to save settings.", true); return; }
+  if (!S.user || !S.sheetId) { toast("Sign in first to save settings.", "err"); return; }
   S.sender = { name:$v("sName"), title:$v("sTitle"), org:$v("sOrg"), email:$v("sEmail"), phone:$v("sPhone") };
   try {
     await ensureSheet("settings", SETTINGS_HEADERS);
@@ -435,8 +539,8 @@ async function saveSettings() {
       await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("settings!A:F")}:append?valueInputOption=USER_ENTERED`, {method:"POST", body:{values:vals}});
     }
     document.getElementById("settingsPanel").classList.remove("open");
-    setStatus("Settings saved.");
-  } catch(e) { setStatus("Could not save settings: "+e.message, true); }
+    toast("Settings saved.");
+  } catch(e) { toast("Could not save settings: "+e.message, "err"); }
 }
 
 async function loadChangelogFromSheet() {
@@ -445,7 +549,6 @@ async function loadChangelogFromSheet() {
   try {
     const r = await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A:O")}`);
     const rows = r.values || [];
-    // Patch header row if sheet was created by an older version with fewer columns
     if (rows.length > 0 && rows[0].length < CHANGELOG_HEADERS.length) {
       await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent("changelog!A1:O1")}?valueInputOption=USER_ENTERED`, {method:"PUT", body:{values:[CHANGELOG_HEADERS]}});
     }
@@ -476,11 +579,12 @@ async function loadChangelogFromSheet() {
         timestamp:   row[0]||"",
         tsMs:        r.tsMs,
         status:      laterRevert ? "reverted" : "done",
+        confirming:  false,
       });
     });
     entries.sort((a,b) => b.tsMs - a.tsMs);
     S.changelog = entries;
-  } catch(e) { /* changelog sheet doesn't exist yet — silently ignore */ }
+  } catch(e) {}
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -536,13 +640,11 @@ function colLetter(n) {
 async function loadData() {
   setLoading(true);
   try {
-    // Get sheet list
     const meta = await apiFetch(`${API}/${S.sheetId}?fields=sheets.properties.title`);
     const allTabs = meta.sheets.map(s => s.properties.title);
     S.tabs = allTabs.filter(n => !SKIP.includes(n.toLowerCase()));
     S.tabLabels = S.tabs.map(t => tabDisplay(t)[0]);
 
-    // Batch fetch all ranges
     const ranges = ["main!A:Z", ...S.tabs.map(t => `'${t}'!A:Z`)];
     const enc    = ranges.map(r => "ranges=" + encodeURIComponent(r)).join("&");
     const batch  = await apiFetch(`${API}/${S.sheetId}/values:batchGet?${enc}`);
@@ -553,7 +655,6 @@ async function loadData() {
       bySheet[name] = vr.values || [];
     });
 
-    // Parse roster
     S.roster = [];
     (bySheet["main"] || []).slice(8).forEach(row => {
       const name  = String(row[2]||"").trim();
@@ -567,14 +668,12 @@ async function loadData() {
       });
     });
 
-    // Parse attendance tabs
     S.tabData = {};
     S.tabs.forEach(tab => {
       const rows    = bySheet[tab] || [];
       const isEvent = tab.toLowerCase() === "events";
       const headers = {};
       const officerRows = {};
-
       if (rows.length >= 4) {
         (rows[3]||[]).slice(3).forEach((val,i) => {
           const v = String(val||"").trim();
@@ -584,14 +683,14 @@ async function loadData() {
       rows.forEach((row, i) => {
         if (i < 4 || (row[2]||"").trim() === "") return;
         const name = String(row[2]||"").replace(/\s+/g," ").trim();
-        officerRows[name.toLowerCase()] = i + 1;  // 1-based
+        officerRows[name.toLowerCase()] = i + 1;
       });
       S.tabData[tab] = { headers, officerRows };
     });
 
     populateUI();
   } catch(e) {
-    setStatus("Load failed: " + e.message, true);
+    toast("Load failed: " + e.message, "err");
   }
   setLoading(false);
 }
@@ -620,7 +719,7 @@ function formatDate(raw) {
   return raw;
 }
 
-// ── Officer color coding ──────────────────────────────────────────────────────
+// ── Color & risk helpers ──────────────────────────────────────────────────────
 
 const DEPT_COLORS={administration:"#94a3b8",finance:"#fbbf24",activities:"#4ade80",relations:"#818cf8",organizations:"#fb923c"};
 const PALETTE=["#e879f9","#2dd4bf","#fb7185","#38bdf8","#a3e635","#c084fc"];
@@ -649,6 +748,18 @@ function officerColor(o) {
   return isVP(p)?c:c+"99";
 }
 
+function riskLevel(total) {
+  if (total >= DANGER_PTS) return "danger";
+  if (total >= WARN_PTS)   return "warn";
+  return "";
+}
+
+function riskHtml(total) {
+  const lvl = riskLevel(total);
+  if (!lvl) return `<span style="font-size:10px;color:#374151;margin-left:auto">${total}pt${Math.abs(total)===1?"":"s"}</span>`;
+  return `<span class="risk ${lvl}" style="margin-left:auto">${total}pts</span>`;
+}
+
 function flatItems(roster) {
   const pres=roster.filter(o=>isPresident(o.position));
   const adv=roster.filter(o=>isAdvisor(o.position));
@@ -668,26 +779,54 @@ function flatItems(roster) {
 const pickerBtn=document.getElementById("pickerBtn");
 const pickerDd=document.getElementById("pickerDd");
 
-function renderPicker() {
-  pickerDd.innerHTML="";
-  flatItems(S.roster).forEach(item=>{
-    if(item.type==="section"){
-      const el=document.createElement("div");el.className="picker-section";el.textContent=item.label;pickerDd.appendChild(el);
+function renderPicker(filter) {
+  if (filter === undefined) filter = pickerDd.querySelector(".picker-search")?.value || "";
+  pickerDd.innerHTML = "";
+
+  const si = document.createElement("input");
+  si.type="text"; si.className="picker-search"; si.placeholder="Search officers…"; si.value=filter;
+  si.addEventListener("input", () => renderPicker(si.value));
+  si.addEventListener("click", e => e.stopPropagation());
+  si.addEventListener("keydown", e => { if(e.key==="Escape"){closePicker();e.stopPropagation();} });
+  pickerDd.appendChild(si);
+
+  const q = filter.trim().toLowerCase();
+  let pendingSection = null, count = 0;
+
+  flatItems(S.roster).forEach(item => {
+    if (item.type === "section") {
+      pendingSection = item.label;
     } else {
-      const o=item.o,col=officerColor(o);
-      const el=document.createElement("div");
-      el.className="picker-row"+(item.bold?" bold":"")+(S.selectedOfficer&&S.selectedOfficer.name===o.name?" cur":"");
-      el.innerHTML=`<span class="dot" style="background:${col}"></span><span class="rname" style="color:${col}">${o.name}</span><span class="rpos">${o.position}</span>`;
-      el.addEventListener("click",()=>{selectOfficer(o);closePicker();});
+      const o = item.o;
+      if (q && !o.name.toLowerCase().includes(q) && !o.position.toLowerCase().includes(q)) return;
+      if (pendingSection) {
+        const s = document.createElement("div"); s.className="picker-section"; s.textContent=pendingSection;
+        pickerDd.appendChild(s); pendingSection=null;
+      }
+      const col = officerColor(o);
+      const el  = document.createElement("div");
+      el.className = "picker-row"+(item.bold?" bold":"")+(S.selectedOfficer?.name===o.name?" cur":"");
+      el.innerHTML  = `<span class="dot" style="background:${col}"></span><span class="rname" style="color:${col}">${o.name}</span><span class="rpos">${o.position}</span>${riskHtml(o.total)}`;
+      el.addEventListener("click", () => { selectOfficer(o); closePicker(); });
       pickerDd.appendChild(el);
+      count++;
     }
   });
+
+  if (q && count === 0) {
+    const el = document.createElement("div"); el.className="picker-no-match"; el.textContent="No matches";
+    pickerDd.appendChild(el);
+  }
 }
 
-pickerBtn.addEventListener("click",()=>pickerDd.classList.contains("open")?closePicker():openPicker());
-document.addEventListener("click",e=>{if(!document.getElementById("pickerWrap").contains(e.target))closePicker();});
-function openPicker(){pickerDd.classList.add("open");renderPicker();}
-function closePicker(){pickerDd.classList.remove("open");}
+pickerBtn.addEventListener("click", () => pickerDd.classList.contains("open") ? closePicker() : openPicker());
+document.addEventListener("click", e => { if(!document.getElementById("pickerWrap").contains(e.target)) closePicker(); });
+function openPicker() {
+  pickerDd.classList.add("open");
+  renderPicker("");
+  setTimeout(() => pickerDd.querySelector(".picker-search")?.focus(), 30);
+}
+function closePicker() { pickerDd.classList.remove("open"); }
 
 function selectOfficer(o) {
   S.selectedOfficer=o;
@@ -697,6 +836,11 @@ function selectOfficer(o) {
   tn.textContent=o.name+"  —  "+o.position;
   tn.style.color=col;
   tn.style.fontWeight=(isVP(o.position)||isPresident(o.position))?"700":"400";
+  // At-risk badge in trigger
+  const rb=document.getElementById("triggerRisk");
+  const lvl=riskLevel(o.total);
+  if(lvl){rb.className="risk-badge risk "+lvl;rb.textContent=o.total+"pts";rb.style.display="";}
+  else{rb.style.display="none";}
   document.getElementById("officerDetail").textContent="Current total: "+o.total+" pts  ·  "+o.email;
   S.cellValue="";
   fetchCell();
@@ -709,18 +853,23 @@ const meetingSel=document.getElementById("meetingSel");
 const dateSel=document.getElementById("dateSel");
 
 function populateUI() {
-  // Codes
   const codeSel=document.getElementById("codeSel");
   codeSel.innerHTML="";
   CODE_DISPLAY.forEach(c=>{const o=document.createElement("option");o.value=c.key;o.textContent=c.label;codeSel.appendChild(o);});
 
-  // Meetings
   meetingSel.innerHTML="";
   S.tabLabels.forEach((lbl,i)=>{const o=document.createElement("option");o.value=i;o.textContent=lbl;meetingSel.appendChild(o);});
-  if(S.tabs.length){S.selectedTab=S.tabs[0];populateDates();}
+
+  // Restore sticky meeting tab
+  const lastTab=localStorage.getItem("lastTab");
+  const stickyIdx=lastTab?S.tabs.indexOf(lastTab):-1;
+  if(stickyIdx>=0){meetingSel.selectedIndex=stickyIdx;S.selectedTab=S.tabs[stickyIdx];}
+  else if(S.tabs.length){S.selectedTab=S.tabs[0];}
+  if(S.selectedTab) populateDates();
 
   if(S.roster.length) selectOfficer(S.roster[0]);
 
+  if(S.bulkMode) renderBulkList();
   fillSenderFields();
   document.getElementById("sheetIdBadge").textContent="…"+S.sheetId.slice(-16);
 }
@@ -735,18 +884,36 @@ function populateDates() {
     if(!first)first={col:parseInt(col),lbl};
     const o=document.createElement("option");o.value=col;o.textContent=lbl;dateSel.appendChild(o);
   });
+
+  // Restore sticky date
+  const lastDateLbl=localStorage.getItem("lastDateLbl");
+  const lastTabStored=localStorage.getItem("lastTab");
+  if(lastDateLbl && lastTabStored===tab){
+    const match=[...dateSel.options].find(o=>o.text===lastDateLbl);
+    if(match){dateSel.value=match.value;first={col:parseInt(match.value),lbl:lastDateLbl};}
+  }
+
   S.selectedColIdx=first?first.col:null;
   S.selectedDateLbl=first?first.lbl:null;
   S.cellValue="";fetchCell();updatePreview();
 }
 
-meetingSel.addEventListener("change",()=>{S.selectedTab=S.tabs[parseInt(meetingSel.value)];populateDates();});
+meetingSel.addEventListener("change",()=>{
+  S.selectedTab=S.tabs[parseInt(meetingSel.value)];
+  localStorage.setItem("lastTab",S.selectedTab);
+  populateDates();
+});
 dateSel.addEventListener("change",()=>{
   S.selectedColIdx=parseInt(dateSel.value);
   S.selectedDateLbl=dateSel.options[dateSel.selectedIndex].text;
+  localStorage.setItem("lastDateLbl",S.selectedDateLbl);
+  localStorage.setItem("lastTab",S.selectedTab);
   S.cellValue="";fetchCell();updatePreview();
 });
-document.getElementById("codeSel").addEventListener("change",()=>{S.selectedCodeKey=document.getElementById("codeSel").value;updatePreview();});
+document.getElementById("codeSel").addEventListener("change",()=>{
+  S.selectedCodeKey=document.getElementById("codeSel").value;
+  updatePreview();
+});
 
 // ── Cell fetch ────────────────────────────────────────────────────────────────
 
@@ -772,8 +939,8 @@ function fetchCell() {
 
 function ptsStr(p){return p>0?"+"+p:String(p);}
 
-function buildEmail() {
-  const o=S.selectedOfficer,tab=S.selectedTab,ck=S.selectedCodeKey,date=S.selectedDateLbl;
+function buildEmail(officer) {
+  const o=officer||S.selectedOfficer, tab=S.selectedTab, ck=S.selectedCodeKey, date=S.selectedDateLbl;
   const code=CODES[ck];
   if(!o||!tab||!code) return null;
   const [,subLbl,bodyLbl]=tabDisplay(tab);
@@ -794,6 +961,7 @@ function buildEmail() {
 }
 
 function updatePreview() {
+  if(S.bulkMode) return;
   const o=S.selectedOfficer,tab=S.selectedTab,ck=S.selectedCodeKey;
   const code=CODES[ck];if(!o||!tab||!code) return;
   const em=buildEmail();if(!em) return;
@@ -815,13 +983,13 @@ function updatePreview() {
 
 document.getElementById("draftBtn").addEventListener("click",()=>{
   const em=buildEmail();
-  if(!em){setStatus("Please select all fields first.",true);return;}
+  if(!em){toast("Please select all fields first.","err");return;}
   const o=S.selectedOfficer,tab=S.selectedTab,ck=S.selectedCodeKey,code=CODES[ck];
   const colIdx=S.selectedColIdx;
 
   const mailto="mailto:"+encodeURIComponent(em.to)+"?cc=akahlon1%40student.rccd.edu&subject="+encodeURIComponent(em.subject)+"&body="+encodeURIComponent(em.body);
   window.open(mailto);
-  setStatus("✓ Email client opened.");
+  toast("✓ Email client opened.");
 
   const pw={officer:{...o},tab,dateDisplay:S.selectedDateLbl,colIndex:colIdx,codeValue:code.abbr,codeKey:ck,newTotal:em.newTotal,totalBefore:o.total,oldValue:S.cellValue};
   S.pendingWrite=pw;
@@ -847,29 +1015,27 @@ async function doWrite(pw) {
   setLoading(true);
   const td=S.tabData[pw.tab];
   const rowIdx=td&&td.officerRows[pw.officer.name.toLowerCase()];
-  if(!rowIdx){setStatus("Officer not found in sheet.",true);setLoading(false);addCL(pw,"failed");return;}
+  if(!rowIdx){toast("Officer not found in sheet.","err");setLoading(false);addCL(pw,"failed");return;}
   const range=`'${pw.tab}'!${colLetter(pw.colIndex)}${rowIdx}`;
   try {
-    // Read old value first
     const cur=await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent(range)}`);
     const oldVal=(((cur.values||[[]])[0])||[])[0]||"";
     pw.oldValue=oldVal;
-    // Write new value
     await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,{
       method:"PUT",body:{values:[[pw.codeValue]]}
     });
-    setStatus("✓ "+pw.codeValue+" written — new total: "+pw.newTotal+" pts");
+    toast("✓ "+pw.codeValue+" written — new total: "+pw.newTotal+" pts");
     addCL(pw,"done");
     writeChangelog(pw.officer.name,pw.officer.position,pw.tab,pw.dateDisplay,oldVal,pw.codeValue,pw.totalBefore,pw.newTotal,"Write",pw.colIndex);
   } catch(e) {
-    setStatus("⚠ Sync failed: "+e.message,true);addCL(pw,"failed");
+    toast("⚠ Sync failed: "+e.message,"err");addCL(pw,"failed");
   }
   setLoading(false);
 }
 
 async function doRevert(entry) {
   if(entry.status!=="done") return;
-  entry.status="reverting";renderCL();setLoading(true);
+  entry.status="reverting";entry.confirming=false;renderCL();setLoading(true);
   const td=S.tabData[entry.tab];
   const rowIdx=td&&td.officerRows[entry.officer.name.toLowerCase()];
   if(!rowIdx){entry.status="done";renderCL();setLoading(false);return;}
@@ -886,10 +1052,10 @@ async function doRevert(entry) {
       document.getElementById("officerDetail").textContent="Current total: "+entry.totalBefore+" pts  ·  "+S.selectedOfficer.email;
       updatePreview();
     }
-    setStatus("↩ Reverted "+entry.officer.name+" — "+entry.codeValue+" removed.");
+    toast("↩ Reverted "+entry.officer.name+" — "+entry.codeValue+" removed.");
     writeChangelog(entry.officer.name,entry.officer.position,entry.tab,entry.dateDisplay,entry.codeValue,entry.oldValue||"∅",entry.newTotal,entry.totalBefore,"Revert",entry.colIndex);
   } catch(e) {
-    entry.status="done";setStatus("⚠ Revert failed: "+e.message,true);
+    entry.status="done";toast("⚠ Revert failed: "+e.message,"err");
   }
   renderCL();setLoading(false);
 }
@@ -915,7 +1081,7 @@ async function writeChangelog(name,pos,tab,date,oldVal,newVal,before,after,actio
 
 function addCL(pw,status) {
   const loggedBy=(S.user&&S.user.name||S.sender.name||"").split(" ")[0]||"?";
-  S.changelog.unshift({...pw,status,loggedBy,tsMs:Date.now(),timestamp:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})});
+  S.changelog.unshift({...pw,status,loggedBy,confirming:false,tsMs:Date.now(),timestamp:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})});
   renderCL();
 }
 
@@ -931,9 +1097,20 @@ function renderCL() {
     text.className="cl-text";
     text.innerHTML="["+entry.timestamp+"] <span style='color:#6b7280'>by <b style='color:#9ca3af'>"+entry.loggedBy+"</b></span>  ·  <b>"+entry.officer.name+"</b>  ·  "+entry.dateDisplay+"  ·  "+old+" → "+entry.codeValue+"  ("+entry.totalBefore+" → "+entry.newTotal+" pts)";
     div.appendChild(text);
+
     if(entry.status==="done"){
-      const btn=document.createElement("button");btn.className="cl-revert";btn.textContent="↩ Revert";
-      btn.addEventListener("click",()=>doRevert(entry));div.appendChild(btn);
+      if(entry.confirming){
+        const wrap=document.createElement("div");wrap.className="cl-confirm-wrap";
+        const yes=document.createElement("button");yes.className="cl-confirm-yes";yes.textContent="Yes, revert";
+        const no=document.createElement("button");no.className="cl-confirm-no";no.textContent="Cancel";
+        yes.addEventListener("click",()=>doRevert(entry));
+        no.addEventListener("click",()=>{entry.confirming=false;renderCL();});
+        wrap.appendChild(yes);wrap.appendChild(no);div.appendChild(wrap);
+      } else {
+        const btn=document.createElement("button");btn.className="cl-revert";btn.textContent="↩ Revert";
+        btn.addEventListener("click",()=>{entry.confirming=true;renderCL();});
+        div.appendChild(btn);
+      }
     } else if(entry.status==="reverting"){
       const s=document.createElement("span");s.style.cssText="font-size:10px;color:#4b5563;white-space:nowrap";s.textContent="↻ reverting…";div.appendChild(s);
     } else if(entry.status==="reverted"){
@@ -945,23 +1122,229 @@ function renderCL() {
   });
 }
 
+// ── Meeting summary ───────────────────────────────────────────────────────────
+
+document.getElementById("summaryBtn").addEventListener("click", openSummary);
+document.getElementById("closeSummaryBtn").addEventListener("click", () => document.getElementById("summaryOverlay").classList.remove("open"));
+document.getElementById("summaryOverlay").addEventListener("click", e => { if(e.target===e.currentTarget) e.currentTarget.classList.remove("open"); });
+
+async function openSummary() {
+  const tab=S.selectedTab,colIdx=S.selectedColIdx,dateLbl=S.selectedDateLbl;
+  if(!tab||!colIdx){toast("Select a meeting and date first.","err");return;}
+  const overlay=document.getElementById("summaryOverlay");
+  overlay.classList.add("open");
+  document.getElementById("summaryTitle").textContent=(S.tabLabels[S.tabs.indexOf(tab)]||tab);
+  document.getElementById("summaryMeta").textContent=dateLbl||"";
+  const body=document.getElementById("summaryBody");
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#4b5563;font-size:12px">Loading…</div>';
+
+  try {
+    const td=S.tabData[tab];
+    if(!td) throw new Error("Tab data not loaded — reload first");
+    const range=`'${tab}'!${colLetter(colIdx)}5:${colLetter(colIdx)}500`;
+    const r=await apiFetch(`${API}/${S.sheetId}/values/${encodeURIComponent(range)}`);
+    const vals=(r.values||[]).map(row=>row[0]||"");
+
+    body.innerHTML="";
+    let pendingSection=null;
+    flatItems(S.roster).forEach(item=>{
+      if(item.type==="section"){
+        pendingSection=item.label;
+      } else {
+        const o=item.o;
+        const rowIdx=td.officerRows[o.name.toLowerCase()];
+        const code=rowIdx?(vals[rowIdx-5]||""):"";
+        const codeInfo=CODES[code];
+        const col=officerColor(o);
+        const lvl=riskLevel(o.total);
+        if(pendingSection){
+          const s=document.createElement("div");s.className="summary-section";s.textContent=pendingSection;
+          body.appendChild(s);pendingSection=null;
+        }
+        const el=document.createElement("div");el.className="summary-row";
+        el.title="Click to select "+o.name;
+        el.innerHTML=`<span class="dot" style="background:${col};width:7px;height:7px;flex-shrink:0;border-radius:50%"></span><span class="summary-name" style="color:${col}">${o.name}</span><span class="summary-pos">${o.position}</span><span class="summary-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span><span class="summary-code${code?'':' empty'}" style="${code&&codeInfo?'color:'+CODE_COLORS[code]:'''}">${code?(codeInfo?.abbr||code):"—"}</span>`;
+        el.addEventListener("click",()=>{
+          selectOfficer(o);
+          document.getElementById("summaryOverlay").classList.remove("open");
+        });
+        body.appendChild(el);
+      }
+    });
+
+    // Counts
+    const coded=S.roster.filter(o=>{ const ri=td.officerRows[o.name.toLowerCase()]; return ri&&vals[ri-5]; });
+    document.getElementById("summaryMeta").textContent=(dateLbl||"")+"  ·  "+coded.length+"/"+S.roster.length+" marked";
+  } catch(e){
+    body.innerHTML=`<div style="padding:20px;text-align:center;color:#f87171;font-size:12px">${e.message}</div>`;
+  }
+}
+
+// ── Bulk mode ─────────────────────────────────────────────────────────────────
+
+document.getElementById("modeBulk").addEventListener("click",()=>setBulkMode(true));
+document.getElementById("modeAuto").addEventListener("click",()=>{
+  setBulkMode(false);
+  S.autoMode=true;
+  document.getElementById("modeAuto").classList.add("active");
+  document.getElementById("modeManual").classList.remove("active");
+  S.pendingWrite=null;document.getElementById("writeBtn").disabled=true;
+  document.getElementById("modeHint").textContent="Auto: writes on draft open · Manual: separate Write button";
+});
+document.getElementById("modeManual").addEventListener("click",()=>{
+  setBulkMode(false);
+  S.autoMode=false;
+  document.getElementById("modeManual").classList.add("active");
+  document.getElementById("modeAuto").classList.remove("active");
+  document.getElementById("modeHint").textContent="Auto: writes on draft open · Manual: separate Write button";
+});
+
+function setBulkMode(on) {
+  S.bulkMode=on;
+  S.bulkSelected=new Set();
+  document.getElementById("modeBulk").classList.toggle("active",on);
+  if(on){
+    document.getElementById("modeAuto").classList.remove("active");
+    document.getElementById("modeManual").classList.remove("active");
+  }
+  document.getElementById("bulkSection").classList.toggle("active",on);
+  document.getElementById("previewCard").style.display=on?"none":"";
+  document.getElementById("officerLbl").style.display=on?"none":"";
+  document.getElementById("pickerWrap").style.display=on?"none":"";
+  document.getElementById("officerDetail").style.display=on?"none":"";
+  document.getElementById("draftBtn").style.display=on?"none":"";
+  document.getElementById("bulkQueueBtn").style.display=on?"":"none";
+  document.getElementById("modeHint").textContent=on?"Check officers below, then click Open Email Queue":"Auto: writes on draft open · Manual: separate Write button";
+  if(on) renderBulkList();
+  else { document.getElementById("emailQueueSection").style.display="none"; S.emailQueue=[]; }
+}
+
+function renderBulkList() {
+  const list=document.getElementById("bulkList");
+  list.innerHTML="";
+  let pendingSection=null;
+
+  flatItems(S.roster).forEach(item=>{
+    if(item.type==="section"){
+      pendingSection=item.label;
+    } else {
+      const o=item.o;
+      const col=officerColor(o);
+      const lvl=riskLevel(o.total);
+      if(pendingSection){
+        const s=document.createElement("div");s.className="bulk-section-lbl";s.textContent=pendingSection;
+        list.appendChild(s);pendingSection=null;
+      }
+      const row=document.createElement("div");row.className="bulk-row";
+      const cb=document.createElement("input");cb.type="checkbox";cb.checked=S.bulkSelected.has(o.name);
+      cb.addEventListener("change",e=>{
+        e.stopPropagation();
+        if(cb.checked)S.bulkSelected.add(o.name);else S.bulkSelected.delete(o.name);
+        updateBulkCount();
+      });
+      row.innerHTML=`<span class="bulk-name" style="color:${col}">${o.name}</span><span class="bulk-pos">${o.position}</span><span class="bulk-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span>`;
+      row.insertBefore(cb,row.firstChild);
+      row.addEventListener("click",e=>{if(e.target===cb)return;cb.checked=!cb.checked;if(cb.checked)S.bulkSelected.add(o.name);else S.bulkSelected.delete(o.name);updateBulkCount();});
+      list.appendChild(row);
+    }
+  });
+  updateBulkCount();
+}
+
+function updateBulkCount() {
+  document.getElementById("bulkCount").textContent=S.bulkSelected.size+" selected";
+  document.getElementById("bulkQueueBtn").disabled=S.bulkSelected.size===0;
+}
+
+document.getElementById("selectAllBtn").addEventListener("click",()=>{
+  S.roster.forEach(o=>S.bulkSelected.add(o.name));
+  renderBulkList();
+});
+document.getElementById("deselectAllBtn").addEventListener("click",()=>{
+  S.bulkSelected.clear();
+  renderBulkList();
+});
+
+document.getElementById("bulkQueueBtn").addEventListener("click",async()=>{
+  if(!S.selectedTab||!S.selectedColIdx){toast("Select a meeting and date first.","err");return;}
+  const officers=S.roster.filter(o=>S.bulkSelected.has(o.name));
+  if(!officers.length){toast("No officers selected.","err");return;}
+  const code=CODES[S.selectedCodeKey];
+  if(!code){toast("Select a code first.","err");return;}
+
+  // Build email queue entries (pre-compute, no sheet writes yet)
+  S.emailQueue=officers.map(o=>({
+    officer:{...o},
+    code,
+    colIndex:S.selectedColIdx,
+    tab:S.selectedTab,
+    dateDisplay:S.selectedDateLbl,
+    newTotal:+(o.total+code.points).toFixed(4),
+    status:"pending",
+  }));
+
+  document.getElementById("emailQueueSection").style.display="";
+  renderQueue();
+});
+
+function renderQueue() {
+  const list=document.getElementById("emailQueueList");
+  const done=S.emailQueue.filter(e=>e.status==="sent").length;
+  document.getElementById("queueHint").textContent=done+"/"+S.emailQueue.length+" sent";
+  list.innerHTML="";
+  S.emailQueue.forEach((entry,i)=>{
+    const div=document.createElement("div");div.className="queue-entry"+(entry.status==="sent"?" sent":"");
+    const text=document.createElement("div");text.className="queue-text";
+    text.innerHTML="<b>"+entry.officer.name+"</b>  ·  "+entry.code.abbr+"  ·  "+entry.dateDisplay+"  ·  → "+entry.newTotal+" pts";
+    div.appendChild(text);
+    if(entry.status==="pending"){
+      const btn=document.createElement("button");btn.className="queue-open";btn.textContent="✉ Open Email";
+      btn.addEventListener("click",()=>openQueueEmail(i));
+      div.appendChild(btn);
+    } else {
+      const s=document.createElement("span");s.className="queue-done";s.textContent="✓ sent";div.appendChild(s);
+    }
+    list.appendChild(div);
+  });
+}
+
+async function openQueueEmail(i) {
+  const entry=S.emailQueue[i];
+  if(!entry||entry.status==="sent") return;
+
+  // Temporarily set selected officer to build correct email
+  const savedOfficer=S.selectedOfficer;
+  S.selectedOfficer=entry.officer;
+  S.cellValue="";
+  const em=buildEmail(entry.officer);
+  S.selectedOfficer=savedOfficer;
+
+  if(!em){toast("Could not build email for "+entry.officer.name,"err");return;}
+  const mailto="mailto:"+encodeURIComponent(em.to)+"?cc=akahlon1%40student.rccd.edu&subject="+encodeURIComponent(em.subject)+"&body="+encodeURIComponent(em.body);
+  window.open(mailto);
+
+  // Write to sheet
+  const pw={officer:entry.officer,tab:entry.tab,dateDisplay:entry.dateDisplay,colIndex:entry.colIndex,codeValue:entry.code.abbr,codeKey:S.selectedCodeKey,newTotal:em.newTotal,totalBefore:entry.officer.total,oldValue:""};
+  entry.status="sent";
+  renderQueue();
+  doWrite(pw);
+}
+
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-document.getElementById("reloadBtn").addEventListener("click",async()=>{await loadChangelogFromSheet();renderCL();loadData();});
+document.getElementById("reloadBtn").addEventListener("click",async()=>{
+  await loadChangelogFromSheet();renderCL();loadData();
+});
 document.getElementById("resetBtn").addEventListener("click",()=>{
   S.pendingWrite=null;document.getElementById("writeBtn").disabled=true;
   if(S.roster.length) selectOfficer(S.roster[0]);
   meetingSel.selectedIndex=0;
   if(S.tabs.length){S.selectedTab=S.tabs[0];populateDates();}
   document.getElementById("codeSel").selectedIndex=0;S.selectedCodeKey="1";
-  setStatus("");
-});
-document.getElementById("modeAuto").addEventListener("click",()=>{
-  S.autoMode=true;document.getElementById("modeAuto").classList.add("active");document.getElementById("modeManual").classList.remove("active");
-  S.pendingWrite=null;document.getElementById("writeBtn").disabled=true;
-});
-document.getElementById("modeManual").addEventListener("click",()=>{
-  S.autoMode=false;document.getElementById("modeManual").classList.add("active");document.getElementById("modeAuto").classList.remove("active");
+  setBulkMode(false);
+  document.getElementById("modeAuto").classList.add("active");
+  document.getElementById("modeManual").classList.remove("active");
+  S.autoMode=true;
 });
 
 // ── Settings ──────────────────────────────────────────────────────────────────
@@ -978,6 +1361,20 @@ function fillSenderFields() {
   });
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function toast(msg, type) {
+  if(!msg) return;
+  const el=document.createElement("div");
+  el.className="toast"+(type==="err"?" err":" ok");
+  el.textContent=msg;
+  document.getElementById("toastStack").appendChild(el);
+  setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(),300); },4500);
+}
+
+// Keep setStatus as alias so old callers still work
+function setStatus(msg,err){ toast(msg,err?"err":"ok"); }
+
 // ── Utils ─────────────────────────────────────────────────────────────────────
 
 function $(id){return document.getElementById(id);}
@@ -990,14 +1387,10 @@ function switchScreen(id) {
 
 function setLoading(on) {
   document.getElementById("loadingBar").classList.toggle("active",on);
-  document.getElementById("draftBtn").disabled=on;
+  if(!S.bulkMode) document.getElementById("draftBtn").disabled=on;
+  if(S.bulkMode)  document.getElementById("bulkQueueBtn").disabled=on||S.bulkSelected.size===0;
 }
 
-let stTimer=null;
-function setStatus(msg,err) {
-  const el=$("status");el.textContent=msg;el.className="status"+(err?" err":"");
-  clearTimeout(stTimer);if(msg)stTimer=setTimeout(()=>el.textContent="",7000);
-}
 function show(id,msg){document.getElementById(id).textContent=msg;}
 </script>
 </body>
