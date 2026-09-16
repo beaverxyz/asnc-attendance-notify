@@ -1611,12 +1611,14 @@ function syncDistDateToAttendance(){
   S.cellValue="";fetchCell();updatePreview();updateWriteBtn();
 }
 
-// If today is Friday and senate tab is active, auto-select today's column
+// For senate tab: auto-select this week's Friday (Sun–Sat week), overriding memory
 function tryAutoSelectToday(){
-  if(new Date().getDay()!==5) return;
   if(S.selectedTab!=="senate") return;
-  const todayLbl=todayNaturalLabel();
-  const match=[...dateSel.options].find(o=>o.text===todayLbl);
+  const now=new Date();
+  const fri=new Date(now);
+  fri.setDate(now.getDate()+(5-now.getDay())); // 5=Fri; negative offset lands on last Fri (Sat)
+  const friLbl=_MONTHS[fri.getMonth()]+" "+_ordinal(fri.getDate());
+  const match=[...dateSel.options].find(o=>o.text===friLbl);
   if(!match||dateSel.value===match.value) return;
   dateSel.value=match.value;
   S.selectedColIdx=parseInt(match.value);
