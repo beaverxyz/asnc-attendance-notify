@@ -853,6 +853,7 @@ function selectOfficer(o) {
   S.cellValue="";
   fetchCell();
   updatePreview();
+  updateWriteBtn();
 }
 
 // ── Meeting / date ────────────────────────────────────────────────────────────
@@ -911,19 +912,20 @@ meetingSel.addEventListener("change",()=>{
   S.selectedTab=S.tabs[parseInt(meetingSel.value)];
   localStorage.setItem("lastTab",S.selectedTab);
   populateDates();
+  updateWriteBtn();
 });
 dateSel.addEventListener("change",()=>{
   S.selectedColIdx=parseInt(dateSel.value);
   S.selectedDateLbl=dateSel.options[dateSel.selectedIndex].text;
   localStorage.setItem("lastDateLbl",S.selectedDateLbl);
   localStorage.setItem("lastTab",S.selectedTab);
-  S.cellValue="";fetchCell();updatePreview();
+  S.cellValue="";fetchCell();updatePreview();updateWriteBtn();
 });
 document.getElementById("codeSel").addEventListener("change",()=>{
   const sel=document.getElementById("codeSel");
   S.selectedCodeKey=sel.value;
   sel.style.color=CODE_COLORS[S.selectedCodeKey];
-  updatePreview();
+  updatePreview();updateWriteBtn();
 });
 
 // ── Cell fetch ────────────────────────────────────────────────────────────────
@@ -992,32 +994,44 @@ function updatePreview() {
 
 // ── Draft ─────────────────────────────────────────────────────────────────────
 
-document.getElementById("draftBtn").addEventListener("click",()=>{
+function buildPw() {
   const em=buildEmail();
-  if(!em){toast("Please select all fields first.","err");return;}
+  if(!em) return null;
   const o=S.selectedOfficer,tab=S.selectedTab,ck=S.selectedCodeKey,code=CODES[ck];
-  const colIdx=S.selectedColIdx;
+  return {officer:{...o},tab,dateDisplay:S.selectedDateLbl,colIndex:S.selectedColIdx,codeValue:code.abbr,codeKey:ck,newTotal:em.newTotal,totalBefore:o.total,oldValue:S.cellValue,email:em};
+}
 
+function openMailto(em) {
   const mailto="mailto:"+encodeURIComponent(em.to)+"?cc=akahlon1%40student.rccd.edu&subject="+encodeURIComponent(em.subject)+"&body="+encodeURIComponent(em.body);
   window.open(mailto);
   toast("✓ Email client opened.");
+}
 
-  const pw={officer:{...o},tab,dateDisplay:S.selectedDateLbl,colIndex:colIdx,codeValue:code.abbr,codeKey:ck,newTotal:em.newTotal,totalBefore:o.total,oldValue:S.cellValue};
-  S.pendingWrite=pw;
-  S.selectedOfficer.total=em.newTotal;
-  document.getElementById("officerDetail").textContent="Current total: "+em.newTotal+" pts  ·  "+o.email;
-  S.cellValue=code.abbr;
+function applyWrite(pw) {
+  S.selectedOfficer.total=pw.newTotal;
+  document.getElementById("officerDetail").textContent="Current total: "+pw.newTotal+" pts  ·  "+pw.officer.email;
+  S.cellValue=pw.codeValue;
   updatePreview();
+  doWrite(pw);
+}
 
-  if(S.autoMode){doWrite(pw);}
-  else{document.getElementById("writeBtn").disabled=false;}
+function updateWriteBtn() {
+  if(S.autoMode||S.bulkMode){document.getElementById("writeBtn").disabled=true;return;}
+  const ready=!!(S.selectedOfficer&&S.selectedTab&&S.selectedColIdx&&S.selectedCodeKey);
+  document.getElementById("writeBtn").disabled=!ready;
+}
+
+document.getElementById("draftBtn").addEventListener("click",()=>{
+  const pw=buildPw();
+  if(!pw){toast("Please select all fields first.","err");return;}
+  openMailto(pw.email);
+  if(S.autoMode) applyWrite(pw);
 });
 
 document.getElementById("writeBtn").addEventListener("click",()=>{
-  if(!S.pendingWrite) return;
-  const pw=S.pendingWrite;S.pendingWrite=null;
-  document.getElementById("writeBtn").disabled=true;
-  doWrite(pw);
+  const pw=buildPw();
+  if(!pw){toast("Please select all fields first.","err");return;}
+  applyWrite(pw);
 });
 
 // ── Sheet write ───────────────────────────────────────────────────────────────
@@ -1202,8 +1216,8 @@ document.getElementById("modeAuto").addEventListener("click",()=>{
   S.autoMode=true;
   document.getElementById("modeAuto").classList.add("active");
   document.getElementById("modeManual").classList.remove("active");
-  S.pendingWrite=null;document.getElementById("writeBtn").disabled=true;
   document.getElementById("modeHint").textContent="Auto: writes on draft open · Manual: separate Write button";
+  updateWriteBtn();
 });
 document.getElementById("modeManual").addEventListener("click",()=>{
   setBulkMode(false);
@@ -1211,6 +1225,7 @@ document.getElementById("modeManual").addEventListener("click",()=>{
   document.getElementById("modeManual").classList.add("active");
   document.getElementById("modeAuto").classList.remove("active");
   document.getElementById("modeHint").textContent="Auto: writes on draft open · Manual: separate Write button";
+  updateWriteBtn();
 });
 
 function setBulkMode(on) {
@@ -1286,7 +1301,6 @@ document.getElementById("bulkQueueBtn").addEventListener("click",async()=>{
   const code=CODES[S.selectedCodeKey];
   if(!code){toast("Select a code first.","err");return;}
 
-  // Build email queue entries (pre-compute, no sheet writes yet)
   S.emailQueue=officers.map(o=>({
     officer:{...o},
     code,
@@ -1294,7 +1308,8 @@ document.getElementById("bulkQueueBtn").addEventListener("click",async()=>{
     tab:S.selectedTab,
     dateDisplay:S.selectedDateLbl,
     newTotal:+(o.total+code.points).toFixed(4),
-    status:"pending",
+    emailSent:false,
+    written:false,
   }));
 
   document.getElementById("emailQueueSection").style.display="";
@@ -1303,57 +1318,70 @@ document.getElementById("bulkQueueBtn").addEventListener("click",async()=>{
 
 function renderQueue() {
   const list=document.getElementById("emailQueueList");
-  const done=S.emailQueue.filter(e=>e.status==="sent").length;
-  document.getElementById("queueHint").textContent=done+"/"+S.emailQueue.length+" sent · "+(S.autoMode?"auto":"manual")+" mode";
+  const nWritten=S.emailQueue.filter(e=>e.written).length;
+  const nEmailed=S.emailQueue.filter(e=>e.emailSent).length;
+  document.getElementById("queueHint").textContent=nWritten+"/"+S.emailQueue.length+" written · "+nEmailed+"/"+S.emailQueue.length+" emailed";
   list.innerHTML="";
   S.emailQueue.forEach((entry,i)=>{
     const ckey=Object.keys(CODES).find(k=>CODES[k].abbr===entry.code.abbr);
     const ccol=CODE_COLORS[ckey]||"#9ca3af";
     const ocol=officerColor(entry.officer);
-    const div=document.createElement("div");div.className="queue-entry"+(entry.status==="sent"?" sent":"");
+    const allDone=entry.emailSent&&entry.written;
+    const div=document.createElement("div");div.className="queue-entry"+(allDone?" sent":"");
     const text=document.createElement("div");text.className="queue-text";
     text.innerHTML="<b style='color:"+ocol+"'>"+entry.officer.name+"</b>  ·  <b style='color:"+ccol+"'>"+entry.code.abbr+"</b>  ·  "+entry.dateDisplay+"  ·  <span style='color:#6b7280'>→ "+entry.newTotal+" pts</span>";
     div.appendChild(text);
-    if(entry.status==="pending"){
-      const btn=document.createElement("button");btn.className="queue-open";btn.textContent="✉ Open Email";
-      btn.addEventListener("click",()=>openQueueEmail(i));
-      div.appendChild(btn);
-    } else if(entry.status==="emailed"){
-      const btn=document.createElement("button");btn.className="queue-open";btn.style.cssText="background:#1b4332;border-color:#2d6a4f;color:#74c69d";btn.textContent="Write to Sheet";
-      btn.addEventListener("click",()=>{entry.status="sent";renderQueue();if(entry.pw)doWrite(entry.pw);});
-      div.appendChild(btn);
-    } else {
-      const s=document.createElement("span");s.className="queue-done";s.textContent="✓ sent";div.appendChild(s);
-    }
+    const btns=document.createElement("div");btns.style.cssText="display:flex;gap:5px;flex-shrink:0";
+    // Email button
+    const eBtn=document.createElement("button");eBtn.className="queue-open";
+    eBtn.textContent=entry.emailSent?"✓ emailed":"✉ Open Email";
+    if(entry.emailSent){eBtn.disabled=true;eBtn.style.opacity="0.4";}
+    eBtn.addEventListener("click",()=>openQueueEmail(i));
+    btns.appendChild(eBtn);
+    // Write button
+    const wBtn=document.createElement("button");wBtn.className="queue-open";
+    wBtn.style.cssText="background:#1b4332;border-color:#2d6a4f;color:#74c69d";
+    wBtn.textContent=entry.written?"✓ written":"Write to Sheet";
+    if(entry.written){wBtn.disabled=true;wBtn.style.opacity="0.4";}
+    wBtn.addEventListener("click",()=>writeQueueEntry(i));
+    btns.appendChild(wBtn);
+    div.appendChild(btns);
     list.appendChild(div);
   });
 }
 
-async function openQueueEmail(i) {
-  const entry=S.emailQueue[i];
-  if(!entry||entry.status==="sent") return;
-
-  // Temporarily set selected officer to build correct email
+function buildQueuePw(entry) {
   const savedOfficer=S.selectedOfficer;
-  S.selectedOfficer=entry.officer;
-  S.cellValue="";
+  S.selectedOfficer=entry.officer;S.cellValue="";
   const em=buildEmail(entry.officer);
   S.selectedOfficer=savedOfficer;
+  if(!em) return null;
+  return {officer:entry.officer,tab:entry.tab,dateDisplay:entry.dateDisplay,colIndex:entry.colIndex,codeValue:entry.code.abbr,codeKey:Object.keys(CODES).find(k=>CODES[k].abbr===entry.code.abbr)||"1",newTotal:entry.newTotal,totalBefore:entry.officer.total,oldValue:"",email:em};
+}
 
-  if(!em){toast("Could not build email for "+entry.officer.name,"err");return;}
-  const mailto="mailto:"+encodeURIComponent(em.to)+"?cc=akahlon1%40student.rccd.edu&subject="+encodeURIComponent(em.subject)+"&body="+encodeURIComponent(em.body);
+async function openQueueEmail(i) {
+  const entry=S.emailQueue[i];
+  if(!entry||entry.emailSent) return;
+  const pw=buildQueuePw(entry);
+  if(!pw){toast("Could not build email for "+entry.officer.name,"err");return;}
+  const mailto="mailto:"+encodeURIComponent(pw.email.to)+"?cc=akahlon1%40student.rccd.edu&subject="+encodeURIComponent(pw.email.subject)+"&body="+encodeURIComponent(pw.email.body);
   window.open(mailto);
-
-  const pw={officer:entry.officer,tab:entry.tab,dateDisplay:entry.dateDisplay,colIndex:entry.colIndex,codeValue:entry.code.abbr,codeKey:S.selectedCodeKey,newTotal:em.newTotal,totalBefore:entry.officer.total,oldValue:""};
+  entry.emailSent=true;
   entry.pw=pw;
-  if(S.autoMode){
-    entry.status="sent";
-    renderQueue();
-    doWrite(pw);
-  } else {
-    entry.status="emailed";
-    renderQueue();
-  }
+  renderQueue();
+  // always auto-write on email open in bulk
+  if(!entry.written){entry.written=true;renderQueue();doWrite(pw);}
+}
+
+async function writeQueueEntry(i) {
+  const entry=S.emailQueue[i];
+  if(!entry||entry.written) return;
+  const pw=entry.pw||buildQueuePw(entry);
+  if(!pw){toast("Could not build write for "+entry.officer.name,"err");return;}
+  entry.pw=pw;
+  entry.written=true;
+  renderQueue();
+  doWrite(pw);
 }
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
