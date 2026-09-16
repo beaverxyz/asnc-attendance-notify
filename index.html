@@ -1026,9 +1026,15 @@ function updateWriteBtn() {
   document.getElementById("writeBtn").disabled=!ready;
 }
 
+function confirmOverwrite(pw) {
+  if(!pw.oldValue) return true;
+  return confirm(`"${pw.officer.name}" already has "${pw.oldValue}" on ${pw.dateDisplay}.\n\nOverwrite with "${pw.codeValue}"?`);
+}
+
 document.getElementById("draftBtn").addEventListener("click",()=>{
   const pw=buildPw();
   if(!pw){toast("Please select all fields first.","err");return;}
+  if(S.autoMode && !confirmOverwrite(pw)) return;
   openMailto(pw.email);
   if(S.autoMode) applyWrite(pw);
 });
@@ -1036,6 +1042,7 @@ document.getElementById("draftBtn").addEventListener("click",()=>{
 document.getElementById("writeBtn").addEventListener("click",()=>{
   const pw=buildPw();
   if(!pw){toast("Please select all fields first.","err");return;}
+  if(!confirmOverwrite(pw)) return;
   applyWrite(pw);
 });
 
