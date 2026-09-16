@@ -1163,7 +1163,7 @@ async function openSummary() {
         }
         const el=document.createElement("div");el.className="summary-row";
         el.title="Click to select "+o.name;
-        el.innerHTML=`<span class="dot" style="background:${col};width:7px;height:7px;flex-shrink:0;border-radius:50%"></span><span class="summary-name" style="color:${col}">${o.name}</span><span class="summary-pos">${o.position}</span><span class="summary-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span><span class="summary-code${code?'':' empty'}" style="${code&&codeInfo?'color:'+CODE_COLORS[code]:'''}">${code?(codeInfo?.abbr||code):"—"}</span>`;
+        el.innerHTML=`<span class="dot" style="background:${col};width:7px;height:7px;flex-shrink:0;border-radius:50%"></span><span class="summary-name" style="color:${col}">${o.name}</span><span class="summary-pos">${o.position}</span><span class="summary-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span><span class="summary-code${code?'':' empty'}" style="${code&&codeInfo?'color:'+CODE_COLORS[code]:''}">${code?(codeInfo?.abbr||code):"—"}</span>`;
         el.addEventListener("click",()=>{
           selectOfficer(o);
           document.getElementById("summaryOverlay").classList.remove("open");
