@@ -999,6 +999,8 @@ function populateDates() {
   S.selectedColIdx=first?first.col:null;
   S.selectedDateLbl=first?first.lbl:null;
   S.cellValue="";fetchCell();updatePreview();
+  tryAutoSelectToday();
+  syncAttendanceToDistDate();
 }
 
 meetingSel.addEventListener("change",()=>{
@@ -1013,6 +1015,7 @@ dateSel.addEventListener("change",()=>{
   localStorage.setItem("lastDateLbl",S.selectedDateLbl);
   localStorage.setItem("lastTab",S.selectedTab);
   S.cellValue="";fetchCell();updatePreview();updateWriteBtn();
+  syncAttendanceToDistDate();
 });
 document.getElementById("codeSel").addEventListener("change",()=>{
   const sel=document.getElementById("codeSel");
@@ -1541,6 +1544,77 @@ function switchScreen(id) {
   if(id) document.getElementById(id).classList.add("active");
 }
 
+// ── Date helpers (shared) ─────────────────────────────────────────────────────
+
+const _MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+function _ordinal(n){if(n>=11&&n<=13)return n+"th";return n+(["th","st","nd","rd"][n%10]||"th");}
+
+function timeGreeting(){
+  const h=new Date().getHours();
+  return h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+}
+
+function todayNaturalLabel(){
+  const d=new Date();
+  return _MONTHS[d.getMonth()]+" "+_ordinal(d.getDate());
+}
+
+function naturalLabelToMMDDYYYY(lbl){
+  const clean=lbl.replace(/(\d+)(st|nd|rd|th)/gi,"$1").trim();
+  const parts=clean.split(/\s+/);
+  if(parts.length<2) return "";
+  const mi=_MONTHS.findIndex(m=>m.toLowerCase()===parts[0].toLowerCase());
+  if(mi<0) return "";
+  const day=parseInt(parts[1]);
+  if(isNaN(day)) return "";
+  const yr=new Date().getFullYear();
+  return String(mi+1).padStart(2,"0")+"/"+String(day).padStart(2,"0")+"/"+yr;
+}
+
+function mmddyyyyToNaturalLabel(s){
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return "";
+  const mo=parseInt(m[1])-1,day=parseInt(m[2]);
+  if(mo<0||mo>11||isNaN(day)) return "";
+  return _MONTHS[mo]+" "+_ordinal(day);
+}
+
+// Sync attendance senate date → distDate field
+function syncAttendanceToDistDate(){
+  if(S.selectedTab!=="senate"||!S.selectedDateLbl) return;
+  const fmt=naturalLabelToMMDDYYYY(S.selectedDateLbl);
+  if(fmt) document.getElementById("distDate").value=fmt;
+}
+
+// Sync distDate field → attendance senate date picker
+function syncDistDateToAttendance(){
+  if(S.selectedTab!=="senate") return;
+  const lbl=mmddyyyyToNaturalLabel((document.getElementById("distDate").value||"").trim());
+  if(!lbl) return;
+  const match=[...dateSel.options].find(o=>o.text===lbl);
+  if(!match) return;
+  dateSel.value=match.value;
+  S.selectedColIdx=parseInt(match.value);
+  S.selectedDateLbl=match.text;
+  localStorage.setItem("lastDateLbl",S.selectedDateLbl);
+  S.cellValue="";fetchCell();updatePreview();updateWriteBtn();
+}
+
+// If today is Friday and senate tab is active, auto-select today's column
+function tryAutoSelectToday(){
+  if(new Date().getDay()!==5) return;
+  if(S.selectedTab!=="senate") return;
+  const todayLbl=todayNaturalLabel();
+  const match=[...dateSel.options].find(o=>o.text===todayLbl);
+  if(!match||dateSel.value===match.value) return;
+  dateSel.value=match.value;
+  S.selectedColIdx=parseInt(match.value);
+  S.selectedDateLbl=match.text;
+  localStorage.setItem("lastDateLbl",S.selectedDateLbl);
+  S.cellValue="";fetchCell();updatePreview();updateWriteBtn();
+  syncAttendanceToDistDate();
+}
+
 // ── Distribute tab ────────────────────────────────────────────────────────────
 
 const DIST_DEFAULT_RECIPIENTS = "edwin.romero@norcocollege.edu; achaudhry8@student.rccd.edu; akahlon1@student.rccd.edu; aazam2@student.rccd.edu; mali27@student.rccd.edu; caguilar101@student.rccd.edu; iaguilar47@student.rccd.edu; jgrewal2@student.rccd.edu; jyang42@student.rccd.edu; mkhan42@student.rccd.edu; adarcy2@student.rccd.edu; nsarwary1@student.rccd.edu; mdumlao1@student.rccd.edu; aogelle1@student.rccd.edu; atorres486@student.rccd.edu; ahernandez946@student.rccd.edu; cemerueh1@student.rccd.edu; jmorcos1@student.rccd.edu; skarathi2@student.rccd.edu; agonzalesg@student.rccd.edu; asrccd.trustee@rccd.edu";
@@ -1554,12 +1628,16 @@ function initDistributePanel() {
   document.getElementById("distRecipients").value = saved || DIST_DEFAULT_RECIPIENTS;
   const webhook = localStorage.getItem("discordWebhook") || "";
   document.getElementById("discordWebhook").value = webhook;
-  const today = new Date();
-  const mm = String(today.getMonth()+1).padStart(2,"0");
-  const dd = String(today.getDate()).padStart(2,"0");
-  const yyyy = today.getFullYear();
   const distDateEl = document.getElementById("distDate");
-  if (!distDateEl.value) distDateEl.value = `${mm}/${dd}/${yyyy}`;
+  if (!distDateEl.value) {
+    const synced = S.selectedTab==="senate" && S.selectedDateLbl ? naturalLabelToMMDDYYYY(S.selectedDateLbl) : "";
+    if (synced) {
+      distDateEl.value = synced;
+    } else {
+      const t = new Date();
+      distDateEl.value = String(t.getMonth()+1).padStart(2,"0")+"/"+String(t.getDate()).padStart(2,"0")+"/"+t.getFullYear();
+    }
+  }
 }
 
 function switchAppTab(tab) {
@@ -1601,6 +1679,9 @@ document.getElementById("distRecipients").addEventListener("change", () => {
   localStorage.setItem("distRecipients", document.getElementById("distRecipients").value);
 });
 
+// Distribute date → sync attendance tab date picker
+document.getElementById("distDate").addEventListener("change", () => syncDistDateToAttendance());
+
 // Reset recipients
 document.getElementById("distResetRecip").addEventListener("click", () => {
   document.getElementById("distRecipients").value = DIST_DEFAULT_RECIPIENTS;
@@ -1618,7 +1699,7 @@ document.getElementById("distEmailBtn").addEventListener("click", () => {
   const docWord = distDocType === "Agenda" ? "agenda" : "minutes";
   const verb    = distDocType === "Agenda" ? "is" : "are";
   const subject = `ASNC Senate ${distDocType}${date ? " " + date : ""}`;
-  const body    = `Good morning, ASNC,\n\nAttached ${verb} the ${docWord} for this week's senate meeting. Let me know if you have any questions or concerns.\n\nBest,\n\n${signoff}`;
+  const body    = `${timeGreeting()}, ASNC,\n\nAttached ${verb} the ${docWord} for this week's senate meeting. Let me know if you have any questions or concerns.\n\nBest,\n\n${signoff}`;
   const to      = recips.split(/[;,]/).map(e=>e.trim()).filter(Boolean).join(";");
   const mailto  = "mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   window.open(mailto);
