@@ -981,7 +981,7 @@ function updatePreview() {
   const codeSel=document.getElementById("codeSel");
   $("pOfficer").textContent=o.name;
   $("pMeeting").textContent=isEvent?(S.selectedDateLbl||"—")+" (Event)":(S.selectedDateLbl||"—")+"  —  "+subLbl;
-  $("pCode").textContent=codeSel.options[codeSel.selectedIndex].text+"  ("+ptsStr(code.points)+" pts)";
+  $("pCode").textContent=codeSel.options[codeSel.selectedIndex].text;
   $("pCurrent").textContent=o.total+" pts";
   $("pTotal").textContent=em.newTotal+" pts";
   $("pSubject").textContent=em.subject;
@@ -1106,7 +1106,10 @@ function renderCL() {
     const old=entry.oldValue||"∅";
     const text=document.createElement("div");
     text.className="cl-text";
-    text.innerHTML="["+entry.timestamp+"] <span style='color:#6b7280'>by <b style='color:#9ca3af'>"+entry.loggedBy+"</b></span>  ·  <b>"+entry.officer.name+"</b>  ·  "+entry.dateDisplay+"  ·  "+old+" → "+entry.codeValue+"  ("+entry.totalBefore+" → "+entry.newTotal+" pts)";
+    const ocol=officerColor(entry.officer);
+    const ckey=Object.keys(CODES).find(k=>CODES[k].abbr===entry.codeValue);
+    const ccol=CODE_COLORS[ckey]||"#9ca3af";
+    text.innerHTML="<span style='color:#4b5563'>"+entry.timestamp+"</span>  <span style='color:#374151;font-size:10px'>by</span> <span style='color:#6b7280'>"+entry.loggedBy+"</span>  ·  <b style='color:"+ocol+"'>"+entry.officer.name+"</b>  ·  <span style='color:#4b5563'>"+entry.dateDisplay+"</span>  ·  <span style='color:#374151'>"+old+" →</span> <b style='color:"+ccol+"'>"+entry.codeValue+"</b>  <span style='color:#374151'>("+entry.totalBefore+" → "+entry.newTotal+" pts)</span>";
     div.appendChild(text);
 
     if(entry.status==="done"){
