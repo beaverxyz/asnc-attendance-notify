@@ -159,11 +159,11 @@ select:focus{outline:none;border-color:#2d6a4f}
 .summary-section{font-size:9px;font-weight:700;letter-spacing:.8px;color:#374151;padding:10px 14px 2px;text-transform:uppercase}
 .summary-row{display:flex;align-items:center;gap:7px;padding:5px 14px;cursor:pointer}
 .summary-row:hover{background:#1e1e1e}
-.summary-name{font-size:12px;flex:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-name{font-size:12px;flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-code{font-size:11px;font-weight:700;width:54px;text-align:left;white-space:nowrap;flex-shrink:0}
+.summary-code.empty{color:#374151;font-weight:400}
 .summary-pos{font-size:10px;color:#4b5563;flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .summary-pts{font-size:10px;width:44px;text-align:right;white-space:nowrap;flex-shrink:0}
-.summary-code{font-size:11px;font-weight:700;width:52px;text-align:right;white-space:nowrap;flex-shrink:0}
-.summary-code.empty{color:#374151;font-weight:400}
 
 /* ── Bulk mode ── */
 .bulk-section{margin-top:12px;display:none}
@@ -1204,7 +1204,7 @@ async function openSummary() {
         }
         const el=document.createElement("div");el.className="summary-row";
         el.title="Click to select "+o.name;
-        el.innerHTML=`<span class="dot" style="background:${col};width:7px;height:7px;flex-shrink:0;border-radius:50%"></span><span class="summary-name" style="color:${col}">${o.name}</span><span class="summary-pos">${o.position}</span><span class="summary-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span><span class="summary-code${code?'':' empty'}" style="${code&&codeInfo?'color:'+CODE_COLORS[code]:''}">${code?(codeInfo?.abbr||code):"—"}</span>`;
+        el.innerHTML=`<span class="dot" style="background:${col};width:7px;height:7px;flex-shrink:0;border-radius:50%"></span><span class="summary-name" style="color:${col}">${o.name}</span><span class="summary-code${code?'':' empty'}" style="${code&&codeInfo?'color:'+CODE_COLORS[code]:''}">${code?(codeInfo?.abbr||code):"—"}</span><span class="summary-pos">${o.position}</span><span class="summary-pts ${lvl?'risk '+lvl:''}" style="${!lvl?'color:#374151':''}">${o.total}pts</span>`;
         el.addEventListener("click",()=>{
           selectOfficer(o);
           document.getElementById("summaryOverlay").classList.remove("open");
