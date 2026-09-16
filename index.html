@@ -309,23 +309,44 @@ function gisLoaded() {
     client_id: CLIENT_ID,
     scope: SCOPE,
     callback: onToken,
+    error_callback: () => { /* silent attempt failed — sign-in button stays visible */ },
   });
+
+  // Restore cached token from sessionStorage (survives page refresh)
+  const cached = sessionStorage.getItem("gToken");
+  const expiry  = parseInt(sessionStorage.getItem("gExpiry") || "0");
+  if (cached && Date.now() < expiry) {
+    S.token = cached; S.tokenExpiry = expiry;
+    afterAuth(); return;
+  }
+
+  // Try silent sign-in — no popup if user already granted consent
+  tokenClient.requestAccessToken({ prompt: "" });
 }
 
 function onToken(resp) {
   if (resp.error) { show("authErr", "Sign-in failed: " + resp.error); return; }
   S.token       = resp.access_token;
   S.tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+  sessionStorage.setItem("gToken",  S.token);
+  sessionStorage.setItem("gExpiry", S.tokenExpiry.toString());
   afterAuth();
 }
 
 function ensureToken() {
   return new Promise((resolve, reject) => {
     if (S.token && Date.now() < S.tokenExpiry) { resolve(); return; }
+    const cached = sessionStorage.getItem("gToken");
+    const expiry  = parseInt(sessionStorage.getItem("gExpiry") || "0");
+    if (cached && Date.now() < expiry) {
+      S.token = cached; S.tokenExpiry = expiry; resolve(); return;
+    }
     tokenClient.callback = resp => {
       if (resp.error) { reject(new Error(resp.error)); return; }
       S.token = resp.access_token;
       S.tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      sessionStorage.setItem("gToken",  S.token);
+      sessionStorage.setItem("gExpiry", S.tokenExpiry.toString());
       resolve();
     };
     tokenClient.requestAccessToken({ prompt: "" });
